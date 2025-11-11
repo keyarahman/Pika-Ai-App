@@ -139,16 +139,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#171426',
-        borderRadius: 24,
-        paddingHorizontal: 10,
+        backgroundColor: '#201F24',
+        borderRadius: 50,
+        paddingHorizontal: 12,
         paddingVertical: 12,
         shadowColor: '#000',
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.6,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 6 },
         elevation: 8,
-        overflow: 'hidden',
+        overflow: 'hidden', borderWidth: .1, borderColor: '#33313C'
     },
     item: {
         flex: 1,
@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
         top: 6,
         bottom: 6,
         left: 6,
-        borderRadius: 18,
-        backgroundColor: '#2B2738',
+        borderRadius: 50,
+        backgroundColor: '#414045',
     },
 });
 
