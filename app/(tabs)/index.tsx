@@ -1,98 +1,397 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type FeaturedItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  image: string;
+};
+
+type CollectionItem = {
+  id: string;
+  title: string;
+  badge?: 'New' | 'Hot';
+  image: string;
+};
+
+const windowWidth = Dimensions.get('window').width;
+const CARD_WIDTH = windowWidth * 0.82;
+const CARD_SPACING = 16;
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const featuredItems = useMemo<FeaturedItem[]>(
+    () => [
+      {
+        id: 'shimmy',
+        title: 'Shimmy',
+        subtitle: 'Dance with the Silly Bird Shimmy!',
+        cta: 'Try Now',
+        image:
+          'https://images.unsplash.com/photo-1555685812-4b74353a2971?auto=format&fit=crop&w=1200&q=80',
+      },
+      {
+        id: 'ghostface',
+        title: 'Ghostface',
+        subtitle: 'Scream, record, repeat with Ghostface AI!',
+        cta: 'Try Pack',
+        image:
+          'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=1200&q=80',
+      },
+    ],
+    []
+  );
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const trendingItems = useMemo<CollectionItem[]>(
+    () => [
+      {
+        id: 'kiss-me-to-heaven',
+        title: 'Kiss Me to Heaven',
+        badge: 'New',
+        image:
+          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+      },
+      {
+        id: 'kiss-kiss',
+        title: 'Kiss Kiss',
+        badge: 'Hot',
+        image:
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+      },
+      {
+        id: 'old-romance',
+        title: 'Old Romance',
+        image:
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=70',
+      },
+    ],
+    []
+  );
+
+  const halloweenItems = useMemo<CollectionItem[]>(
+    () => [
+      {
+        id: 'sweet-horror',
+        title: 'Sweet Horror',
+        badge: 'Hot',
+        image:
+          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
+      },
+      {
+        id: 'grim-scythe',
+        title: 'Grim Scythe',
+        image:
+          'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
+      },
+      {
+        id: 'starlit-fae',
+        title: 'Starlit Fae',
+        image:
+          'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
+      },
+    ],
+    []
+  );
+
+  const [activeFeature, setActiveFeature] = useState(0);
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.topBar}>
+          <Pressable style={styles.iconButton}>
+            <Ionicons name="search" size={24} color="#fff" />
+          </Pressable>
+
+          <View style={styles.topActions}>
+            <Pressable style={styles.proBadge}>
+              <Ionicons name="sparkles" size={16} color="#fff" />
+              <Text style={styles.proText}>PRO</Text>
+            </Pressable>
+
+            <Pressable style={styles.iconButton}>
+              <Ionicons name="settings-outline" size={22} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.featureCarousel}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={CARD_WIDTH}
+            decelerationRate="fast"
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
+              setActiveFeature(index);
+            }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+            snapToAlignment="start">
+            {featuredItems.map((item) => (
+              <View key={item.id} style={[styles.featureCard, { width: CARD_WIDTH }]}>
+                <Image source={{ uri: item.image }} style={styles.featureImage} />
+                <View style={styles.featureOverlay} />
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
+                  <Pressable style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonText}>{item.cta}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+
+          <View style={styles.pagination}>
+            {featuredItems.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.paginationDot,
+                  activeFeature === index && styles.paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        <CollectionSection title="Trending" items={trendingItems} />
+        <CollectionSection title="Halloween" items={halloweenItems} />
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+type CollectionSectionProps = {
+  title: string;
+  items: CollectionItem[];
+};
+
+function CollectionSection({ title, items }: CollectionSectionProps) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Pressable hitSlop={8}>
+          <Text style={styles.sectionLink}>See All</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.sectionRow}>
+          {items.map((item) => (
+            <View key={item.id} style={styles.collectionCard}>
+              <Image source={{ uri: item.image }} style={styles.collectionImage} />
+              <View style={styles.cardOverlay} />
+              <View style={styles.cardContent}>
+                {item.badge && (
+                  <View
+                    style={[
+                      styles.badge,
+                      item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
+                    ]}>
+                    <Text style={styles.badgeText}>{item.badge}</Text>
+                  </View>
+                )}
+                <Text style={styles.collectionTitle}>{item.title}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0F0D16',
+  },
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  topBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  iconButton: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  proBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6F39FF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    gap: 6,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  proText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 0.4,
+  },
+  featureCarousel: {
+    marginTop: 20,
+  },
+  featureCard: {
+    height: 220,
+    borderRadius: 28,
+    marginRight: 16,
+    overflow: 'hidden',
+    backgroundColor: '#1E1B2D',
+  },
+  featureImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  featureOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(13, 10, 20, 0.45)',
+  },
+  featureContent: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'space-between',
+  },
+  featureTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  featureSubtitle: {
+    color: '#E4E5F1',
+    fontSize: 16,
+    lineHeight: 22,
+    marginTop: 6,
+  },
+  primaryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#6F39FF',
+    borderRadius: 22,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  pagination: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  paginationDot: {
+    height: 6,
+    width: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  paginationDotActive: {
+    width: 18,
+    backgroundColor: '#6F39FF',
+  },
+  section: {
+    marginTop: 28,
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  sectionLink: {
+    color: '#A8A9C3',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  collectionCard: {
+    width: 160,
+    height: 200,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#1E1B2D',
+  },
+  collectionImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 7, 16, 0.35)',
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  badgeNew: {
+    backgroundColor: '#6F39FF',
+  },
+  badgeHot: {
+    backgroundColor: '#FF4F6D',
+  },
+  collectionTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 'auto',
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });
