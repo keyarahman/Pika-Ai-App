@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import {
   Dimensions,
@@ -149,6 +150,13 @@ export default function HomeScreen() {
                   <Text style={styles.featureTitle}>{item.title}</Text>
                   <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
                   <Pressable style={styles.primaryButton}>
+                    <LinearGradient
+                      colors={["#7135FF", "#A642FF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                      pointerEvents="none"
+                    />
                     <Text style={styles.primaryButtonText}>{item.cta}</Text>
                   </Pressable>
                 </View>
@@ -297,10 +305,10 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#6F39FF',
     borderRadius: 22,
     paddingHorizontal: 28,
     paddingVertical: 12,
+    overflow: 'hidden',
   },
   primaryButtonText: {
     color: '#fff',

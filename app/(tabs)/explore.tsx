@@ -45,18 +45,19 @@ export default function ExploreScreen() {
 
             if (isActive) {
               return (
-                <LinearGradient
+                <Pressable
                   key={option.id}
-                  colors={["#7135FF", "#A642FF"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.modeGradient}>
-                  <Pressable
-                    onPress={() => setActiveMode(option.id)}
-                    style={styles.modeButtonActive}>
-                    <Text style={styles.modeLabelActive}>{option.label}</Text>
-                  </Pressable>
-                </LinearGradient>
+                  onPress={() => setActiveMode(option.id)}
+                  style={styles.modeButtonActive}>
+                  <LinearGradient
+                    colors={["#7135FF", "#A642FF"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                    pointerEvents="none"
+                  />
+                  <Text style={styles.modeLabelActive}>{option.label}</Text>
+                </Pressable>
               );
             }
 
@@ -99,15 +100,16 @@ export default function ExploreScreen() {
           <Ionicons name="chevron-forward" size={18} color="#F0F1F8" />
         </Pressable>
 
-        <LinearGradient
-          colors={["#7135FF", "#5B5BFF"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.generateButton}>
-          <Pressable style={styles.generateContent}>
-            <Text style={styles.generateText}>Generate Video</Text>
-          </Pressable>
-        </LinearGradient>
+        <Pressable style={styles.generateButton}>
+          <LinearGradient
+            colors={["#7135FF", "#5B5BFF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+          />
+          <Text style={styles.generateText}>Generate Video</Text>
+        </Pressable>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -177,13 +179,12 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 28,
   },
-  modeGradient: {
-    borderRadius: 24,
-  },
   modeButtonActive: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
   modeLabelActive: {
     color: '#FFFFFF',
@@ -278,8 +279,7 @@ const styles = StyleSheet.create({
   generateButton: {
     marginTop: 32,
     borderRadius: 28,
-  },
-  generateContent: {
+    overflow: 'hidden',
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
