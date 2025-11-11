@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MODE_OPTIONS = [
@@ -15,6 +15,57 @@ type ModeOptionId = (typeof MODE_OPTIONS)[number]['id'];
 
 export default function ExploreScreen() {
   const [activeMode, setActiveMode] = useState<ModeOptionId>('image-to-video');
+  const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const ensureLibraryPermission = useCallback(async () => {
+    const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) {
+      if (canAskAgain) {
+        Alert.alert('Permission needed', 'Please allow photo library access to pick an image.');
+      }
+      return false;
+    }
+    return true;
+  }, []);
+
+  const ensureCameraPermission = useCallback(async () => {
+    const { granted, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+    if (!granted) {
+      if (canAskAgain) {
+        Alert.alert('Permission needed', 'Please allow camera access to capture a photo.');
+      }
+      return false;
+    }
+    return true;
+  }, []);
+
+  const handleUploadImage = useCallback(async () => {
+    const hasPermission = await ensureLibraryPermission();
+    if (!hasPermission) return;
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!pickerResult.canceled) {
+      setSelectedAsset(pickerResult.assets[0]);
+    }
+  }, [ensureLibraryPermission]);
+
+  const handleTakePhoto = useCallback(async () => {
+    const hasPermission = await ensureCameraPermission();
+    if (!hasPermission) return;
+
+    const cameraResult = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!cameraResult.canceled) {
+      setSelectedAsset(cameraResult.assets[0]);
+    }
+  }, [ensureCameraPermission]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -72,13 +123,33 @@ export default function ExploreScreen() {
           })}
         </View>
 
-        <Pressable style={styles.uploadCard}>
-          <Ionicons name="cloud-upload-outline" size={32} color="#7C5DFF" />
-          <Text style={styles.uploadText}>Tap here to upload your image</Text>
-          <View style={styles.dashedBorder} />
+        <Pressable style={styles.uploadCard} onPress={handleUploadImage}>
+          <View style={styles.uploadIconShell}>
+            <Ionicons name="images-outline" size={48} color="#FFFFFF" />
+          </View>
+          <Text style={styles.uploadTitle}>Upload your image</Text>
+          {selectedAsset && (
+            <Text style={styles.uploadBadge} numberOfLines={1}>
+              {selectedAsset.fileName ?? selectedAsset.uri}
+            </Text>
+          )}
+          <View style={styles.uploadSeparator}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>OR</Text>
+            <View style={styles.separatorLine} />
+          </View>
+          <Pressable
+            style={styles.cameraButton}
+            onPress={(event) => {
+              event.stopPropagation();
+              handleTakePhoto();
+            }}>
+            <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.cameraButtonText}>Take a photo</Text>
+          </Pressable>
         </Pressable>
 
-        <View style={styles.promptCard}>
+        {/* <View style={styles.promptCard}>
           <Text style={styles.promptTitle}>Describe the scene you want to see</Text>
           <Text style={styles.promptCopy}>
             Choose the camera movements from the options below to make your video feel alive.
@@ -98,7 +169,7 @@ export default function ExploreScreen() {
           />
           <Text style={styles.modelLabel}>Pika-2.3 (10s-HD)</Text>
           <Ionicons name="chevron-forward" size={18} color="#F0F1F8" />
-        </Pressable>
+        </Pressable> */}
 
         <Pressable style={styles.generateButton}>
           <LinearGradient
@@ -205,26 +276,66 @@ const styles = StyleSheet.create({
   },
   uploadCard: {
     marginTop: 28,
-    borderRadius: 26,
-    backgroundColor: '#14111F',
+    borderRadius: 28,
+    backgroundColor: '#1B1824',
     alignItems: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+    gap: 20,
+  },
+  uploadIconShell: {
+    height: 86,
+    width: 86,
+    borderRadius: 26,
+    backgroundColor: '#262332',
     justifyContent: 'center',
-    paddingVertical: 48,
-    position: 'relative',
-    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  uploadTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  uploadBadge: {
+    maxWidth: '100%',
+    color: '#9BA0BC',
+    fontSize: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#252332',
+  },
+  uploadSeparator: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  dashedBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: '#7135FF',
-    borderStyle: 'dashed',
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#2F2C3B',
   },
-  uploadText: {
-    color: '#C9CAD8',
-    fontSize: 15,
-    fontWeight: '600',
+  separatorText: {
+    color: '#5E5A72',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  cameraButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: '#262332',
+  },
+  cameraButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   promptCard: {
     marginTop: 24,
