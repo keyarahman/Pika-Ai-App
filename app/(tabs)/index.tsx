@@ -159,31 +159,30 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.stickyHeader}>
+        <Pressable style={styles.iconButton}>
+          <Ionicons name="search" size={24} color="#fff" />
+        </Pressable>
+
+        <View style={styles.headerActions}>
+          <Pressable
+            style={styles.proBadge}
+            onPress={() => router.push('/pro-modal')}>
+            <Ionicons name="sparkles" size={16} color="#fff" />
+            <Text style={styles.proText}>PRO</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => router.push('/settings-modal')}>
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </Pressable>
+        </View>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}>
-        <View style={styles.stickyHeader}>
-          <View style={styles.headerLeft}>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="search" size={24} color="#fff" />
-            </Pressable>
-              
-          </View>
-
-        <View style={styles.headerRight}>
-            <Pressable
-              style={styles.proBadge}
-              onPress={() => router.push('/pro-modal')}>
-              <Ionicons name="sparkles" size={16} color="#fff" />
-              <Text style={styles.proText}>PRO</Text>
-            </Pressable>
-
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="settings-outline" size={22} color="#fff" />
-            </Pressable>
-          </View>
-        </View>
+        showsVerticalScrollIndicator={false}>
 
         <View style={styles.featureCarousel}>
           <ScrollView
@@ -333,19 +332,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F0D16',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    
     gap: 12,
+    justifyContent: 'space-between',
     zIndex: 10,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerRight: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginLeft: 'auto',
   },
   proBadge: {
     flexDirection: 'row',

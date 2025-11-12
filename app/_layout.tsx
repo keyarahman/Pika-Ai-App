@@ -27,6 +27,15 @@ export default function RootLayout() {
             gestureDirection: 'vertical',
           }}
         />
+        <Stack.Screen
+          name="settings-modal"
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            gestureDirection: 'vertical',
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="light" translucent animated />
