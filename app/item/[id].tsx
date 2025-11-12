@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,9 +34,9 @@ export default function CollectionItemScreen() {
         <Pressable style={styles.iconButton} onPress={() => router.back()}>
           <Ionicons name="close" size={22} color="#FFFFFF" />
         </Pressable>
-        <Pressable style={styles.iconButton}>
+        {/* <Pressable style={styles.iconButton}>
           <Ionicons name="ellipsis-vertical" size={22} color="#FFFFFF" />
-        </Pressable>
+        </Pressable> */}
       </View>
 
       <View style={styles.mediaContainer}>

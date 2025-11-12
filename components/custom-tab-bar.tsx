@@ -15,6 +15,7 @@ const TAB_CONFIG: Record<string, TabConfig> = {
     'my-creations': { label: 'My Creations', icon: 'film' },
 };
 
+
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
     const [containerWidth, setContainerWidth] = useState(0);

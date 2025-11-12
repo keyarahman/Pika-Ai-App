@@ -3,14 +3,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Dimensions,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type FeaturedItem = {
@@ -32,6 +25,27 @@ export type CollectionItem = {
 const windowWidth = Dimensions.get('window').width;
 const CARD_WIDTH = windowWidth * 0.82;
 const CARD_SPACING = 16;
+
+export const PRO_PLANS = [
+  {
+    id: 'weekly',
+    label: 'Weekly',
+    price: '$9.99/week',
+  },
+  {
+    id: 'monthly',
+    label: 'Monthly',
+    price: '$14.99/month',
+    helper: 'Best Value',
+  },
+  {
+    id: 'yearly',
+    label: 'Yearly',
+    price: '$29.99/year',
+    helper: 'Just $0.57 per week',
+    badge: 'Best Seller',
+  },
+] as const;
 
 export const VIRAL_ITEMS: CollectionItem[] = [
   {
@@ -154,7 +168,9 @@ export default function HomeScreen() {
           </Pressable>
 
           <View style={styles.topActions}>
-            <Pressable style={styles.proBadge}>
+            <Pressable
+              style={styles.proBadge}
+              onPress={() => router.push('/pro-modal')}>
               <Ionicons name="sparkles" size={16} color="#fff" />
               <Text style={styles.proText}>PRO</Text>
             </Pressable>
