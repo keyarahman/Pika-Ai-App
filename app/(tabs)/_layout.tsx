@@ -13,7 +13,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'AI Effects',
+          title: 'AI Videos',
         }}
       />
       <Tabs.Screen
@@ -25,7 +25,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="my-creations"
         options={{
-          title: 'My Creations',
+          title: 'Collections',
         }}
       />
     </Tabs>

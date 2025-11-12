@@ -101,7 +101,7 @@ export default function ExploreScreen() {
                   onPress={() => setActiveMode(option.id)}
                   style={styles.modeButtonActive}>
                   <LinearGradient
-                    colors={["#7135FF", "#A642FF"]}
+                    colors={["#EA6198", "#7135FF"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={StyleSheet.absoluteFillObject}
@@ -160,7 +160,7 @@ export default function ExploreScreen() {
         </View>
 
         <Pressable style={styles.modelCard}>
-          <Image
+        <Image
             source={{
               uri: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=200&q=60',
             }}
@@ -173,7 +173,7 @@ export default function ExploreScreen() {
 
         <Pressable style={styles.generateButton}>
           <LinearGradient
-            colors={["#7135FF", "#5B5BFF"]}
+            colors={["#EA6198", "#5B5BFF"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}

@@ -151,7 +151,7 @@ export default function HomeScreen() {
                   <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
                   <Pressable style={styles.primaryButton}>
                     <LinearGradient
-                      colors={["#7135FF", "#A642FF"]}
+                      colors={["#EA6198", "#7135FF"]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={StyleSheet.absoluteFillObject}
