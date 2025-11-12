@@ -111,7 +111,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                             <Animated.View style={[styles.iconWrapper, { transform: [{ scale: iconScale }] }]}>
                                 <Ionicons
                                     name={config.icon}
-                                    size={22}
+                                    size={18}
                                     color={isFocused ? '#FFFFFF' : '#8C8FA3'}
                                 />
                             </Animated.View>

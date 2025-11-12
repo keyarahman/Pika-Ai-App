@@ -54,27 +54,37 @@ export default function HomeScreen() {
     []
   );
 
-  const trendingItems = useMemo<CollectionItem[]>(
+  const viralItems = useMemo<CollectionItem[]>(
     () => [
+      {
+        id: 'figurine-me-up',
+        title: 'Figurine Me Up!',
+        image:
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
+      },
+      {
+        id: '3d-figurine-factory',
+        title: '3D Figurine Factory',
+        image:
+          'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
+      },
+      {
+        id: 'kiss-kiss-1',
+        title: 'Kiss Kiss',
+        image:
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+      },
       {
         id: 'kiss-me-to-heaven',
         title: 'Kiss Me to Heaven',
-        badge: 'New',
         image:
-          'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
       },
       {
-        id: 'kiss-kiss',
+        id: 'kiss-kiss-2',
         title: 'Kiss Kiss',
-        badge: 'Hot',
         image:
-          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        id: 'old-romance',
-        title: 'Old Romance',
-        image:
-          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=70',
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
       },
     ],
     []
@@ -177,8 +187,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <CollectionSection title="Trending" items={trendingItems} />
-        <CollectionSection title="Halloween" items={halloweenItems} />
+        <CollectionSection title="Viral" items={viralItems} />
+        <CollectionSection title="Halloween" items={viralItems} />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
