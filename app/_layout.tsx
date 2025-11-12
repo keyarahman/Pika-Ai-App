@@ -20,7 +20,12 @@ export default function RootLayout() {
         <Stack.Screen name="item/[id]" options={{ headerShown: false }} />
         <Stack.Screen
           name="pro-modal"
-          options={{ presentation: 'transparentModal', headerShown: false }}
+          options={{
+            presentation: 'transparentModal',
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            gestureDirection: 'vertical',
+          }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
