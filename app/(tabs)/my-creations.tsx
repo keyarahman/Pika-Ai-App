@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,31 +11,13 @@ type Creation = {
   createdAt: string;
 };
 
-const creations: Creation[] = [
-  {
-    id: 'midnight-witch',
-    title: 'Midnight Witch',
-    createdAt: 'Oct 26, 2025',
-    thumbnail:
-      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'celestial-dream',
-    title: 'Celestial Dream',
-    createdAt: 'Oct 18, 2025',
-    thumbnail:
-      'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 'neon-rider',
-    title: 'Neon Rider',
-    createdAt: 'Oct 14, 2025',
-    thumbnail:
-      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
-  },
-];
+const creations: Creation[] = [];
+const EMPTY_BUCKET_IMAGE =
+  'https://cdn.pixabay.com/photo/2012/04/24/13/18/treasure-40020_640.png';
 
 export default function MyCreationsScreen() {
+  const hasCreations = creations.length > 0;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -42,47 +25,50 @@ export default function MyCreationsScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>My Creations</Text>
+            <Text style={styles.title}>My Collections</Text>
             <Text style={styles.subtitle}>Keep track of everything you generate.</Text>
           </View>
-
-          <Pressable style={styles.uploadButton}>
-            <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
-            <Text style={styles.uploadText}>Import</Text>
-          </Pressable>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent</Text>
-          <View style={styles.grid}>
-            {creations.map((item) => (
-              <View key={item.id} style={styles.card}>
-                <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-                <View style={styles.cardOverlay} />
-                <View style={styles.cardFooter}>
-                  <View>
-                    <Text style={styles.cardTitle}>{item.title}</Text>
-                    <Text style={styles.cardMeta}>{item.createdAt}</Text>
+        {hasCreations ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recent</Text>
+            <View style={styles.grid}>
+              {creations.map((item) => (
+                <View key={item.id} style={styles.card}>
+                  <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+                  <View style={styles.cardOverlay} />
+                  <View style={styles.cardFooter}>
+                    <View>
+                      <Text style={styles.cardTitle}>{item.title}</Text>
+                      <Text style={styles.cardMeta}>{item.createdAt}</Text>
+                    </View>
+                    <Pressable style={styles.actionButton}>
+                      <Ionicons name="ellipsis-horizontal" size={18} color="#fff" />
+                    </Pressable>
                   </View>
-                  <Pressable style={styles.actionButton}>
-                    <Ionicons name="ellipsis-horizontal" size={18} color="#fff" />
-                  </Pressable>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        </View>
-
-        <View style={styles.emptySection}>
-          <Ionicons name="images-outline" size={48} color="#444156" />
-          <Text style={styles.emptyTitle}>Need more inspiration?</Text>
-          <Text style={styles.emptySubtitle}>
-            Browse new templates in Explore and save your favorites here.
-          </Text>
-          <Pressable style={styles.exploreButton}>
-            <Text style={styles.exploreButtonText}>Go to Explore</Text>
-          </Pressable>
-        </View>
+        ) : (
+          <View style={styles.emptySection}>
+            <Image source={{ uri: EMPTY_BUCKET_IMAGE }} style={styles.emptyImage} />
+            <Text style={styles.emptyTitle}>No videos yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Generate your first AI video and it will appear here as soon as it’s ready.
+            </Text>
+            <Pressable style={styles.exploreButton}>
+              <LinearGradient
+                colors={['#EA6198', '#5B5BFF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.exploreGradient}
+              />
+              <Text style={styles.exploreButtonText}>Go to Explore</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -194,6 +180,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  emptyImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 6,
+  },
   emptySubtitle: {
     color: '#A8A9C3',
     fontSize: 14,
@@ -205,7 +196,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 22,
-    backgroundColor: '#6F39FF',
+    overflow: 'hidden',
+  },
+  exploreGradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
   },
   exploreButtonText: {
     color: '#fff',

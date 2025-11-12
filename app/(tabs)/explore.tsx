@@ -72,16 +72,7 @@ export default function ExploreScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.time}>11:35</Text>
-          <View style={styles.statusIndicators}>
-            <Ionicons name="cellular-outline" size={16} color="#E6E7F0" />
-            <Ionicons name="wifi-outline" size={16} color="#E6E7F0" />
-            <View style={styles.battery}>
-              <Text style={styles.batteryValue}>28</Text>
-            </View>
-          </View>
-        </View>
+     
 
         <View style={styles.titleGroup}>
           <Text style={styles.title}>Explore</Text>
@@ -230,7 +221,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleGroup: {
-    marginTop: 32,
+    // marginTop: 32,
     gap: 8,
   },
   title: {
