@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Dimensions,
@@ -29,8 +30,23 @@ export default function AllItemsScreen() {
   const headerTitle =
     typeof title === 'string' && title.trim().length > 0 ? title : 'All Items';
 
+  const handlePressItem = useCallback(
+    (item: CollectionItem) => {
+      router.push({
+        pathname: '/item/[id]',
+        params: {
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          prompt: item.prompt ?? item.title,
+        },
+      });
+    },
+    [router]
+  );
+
   const renderItem = ({ item }: { item: CollectionItem }) => (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
       <Image source={{ uri: item.image }} style={styles.cardImage} />
       <View style={styles.cardOverlay} />
       <View style={styles.cardContent}>
@@ -47,7 +63,7 @@ export default function AllItemsScreen() {
           {item.title}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 
   return (

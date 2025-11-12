@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -26,6 +26,7 @@ export type CollectionItem = {
   title: string;
   badge?: 'New' | 'Hot';
   image: string;
+  prompt?: string;
 };
 
 const windowWidth = Dimensions.get('window').width;
@@ -36,18 +37,21 @@ export const VIRAL_ITEMS: CollectionItem[] = [
   {
     id: 'figurine-me-up',
     title: 'Figurine Me Up!',
+    prompt: 'Figurine Me Up!',
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
   },
   {
     id: '3d-figurine-factory',
     title: '3D Figurine Factory',
+    prompt: '3D Figurine Factory',
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
   },
   {
     id: 'kiss-kiss-1',
     title: 'Kiss Kiss',
+    prompt: 'Kiss Kiss',
     badge: 'Hot',
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
@@ -55,6 +59,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
   {
     id: 'kiss-me-to-heaven',
     title: 'Kiss Me to Heaven',
+    prompt: 'Kiss Me to Heaven',
     badge: 'New',
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
@@ -62,6 +67,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
   {
     id: 'kiss-kiss-2',
     title: 'Kiss Kiss',
+    prompt: 'Kiss Kiss',
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
   },
@@ -72,18 +78,21 @@ const HALLOWEEN_ITEMS: CollectionItem[] = [
     id: 'sweet-horror',
     title: 'Sweet Horror',
     badge: 'Hot',
+    prompt: 'Sweet Horror',
     image:
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
   },
   {
     id: 'grim-scythe',
     title: 'Grim Scythe',
+    prompt: 'Grim Scythe',
     image:
       'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
   },
   {
     id: 'starlit-fae',
     title: 'Starlit Fae',
+    prompt: 'Starlit Fae',
     image:
       'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
   },
@@ -116,6 +125,21 @@ export default function HomeScreen() {
 
   const viralItems = useMemo(() => VIRAL_ITEMS, []);
   const halloweenItems = useMemo(() => HALLOWEEN_ITEMS, []);
+
+  const handlePressCollectionItem = useCallback(
+    (item: CollectionItem) => {
+      router.push({
+        pathname: '/item/[id]',
+        params: {
+          id: item.id,
+          title: item.title,
+          image: item.image,
+          prompt: item.prompt ?? item.title,
+        },
+      });
+    },
+    [router]
+  );
 
   const [activeFeature, setActiveFeature] = useState(0);
 
@@ -195,8 +219,13 @@ export default function HomeScreen() {
           onSeeAll={(sectionTitle) =>
             router.push({ pathname: '/all-items', params: { title: sectionTitle } })
           }
+          onPressItem={handlePressCollectionItem}
         />
-        <CollectionSection title="Halloween" items={halloweenItems} />
+        <CollectionSection
+          title="Halloween"
+          items={halloweenItems}
+          onPressItem={handlePressCollectionItem}
+        />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -208,9 +237,10 @@ type CollectionSectionProps = {
   title: string;
   items: CollectionItem[];
   onSeeAll?: (title: string) => void;
+  onPressItem?: (item: CollectionItem) => void;
 };
 
-function CollectionSection({ title, items, onSeeAll }: CollectionSectionProps) {
+function CollectionSection({ title, items, onSeeAll, onPressItem }: CollectionSectionProps) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -225,7 +255,10 @@ function CollectionSection({ title, items, onSeeAll }: CollectionSectionProps) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.sectionRow}>
           {items.map((item) => (
-            <View key={item.id} style={styles.collectionCard}>
+            <Pressable
+              key={item.id}
+              style={styles.collectionCard}
+              onPress={() => onPressItem?.(item)}>
               <Image source={{ uri: item.image }} style={styles.collectionImage} />
               <View style={styles.cardOverlay} />
               <View style={styles.cardContent}>
@@ -240,7 +273,7 @@ function CollectionSection({ title, items, onSeeAll }: CollectionSectionProps) {
                 )}
                 <Text style={styles.collectionTitle}>{item.title}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
