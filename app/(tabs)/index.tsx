@@ -161,13 +161,17 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="search" size={24} color="#fff" />
-          </Pressable>
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}>
+        <View style={styles.stickyHeader}>
+          <View style={styles.headerLeft}>
+            <Pressable style={styles.iconButton}>
+              <Ionicons name="search" size={24} color="#fff" />
+            </Pressable>
+              
+          </View>
 
-          <View style={styles.topActions}>
+        <View style={styles.headerRight}>
             <Pressable
               style={styles.proBadge}
               onPress={() => router.push('/pro-modal')}>
@@ -305,12 +309,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 120,
   },
-  topBar: {
+  headerRow: {
     paddingHorizontal: 20,
     paddingTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#0F0D16',
+    paddingBottom: 12,
   },
   iconButton: {
     height: 40,
@@ -320,7 +326,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topActions: {
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: '#0F0D16',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    
+    gap: 12,
+    zIndex: 10,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
