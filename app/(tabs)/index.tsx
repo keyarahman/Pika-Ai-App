@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   Dimensions,
@@ -20,7 +21,7 @@ type FeaturedItem = {
   image: string;
 };
 
-type CollectionItem = {
+export type CollectionItem = {
   id: string;
   title: string;
   badge?: 'New' | 'Hot';
@@ -31,7 +32,66 @@ const windowWidth = Dimensions.get('window').width;
 const CARD_WIDTH = windowWidth * 0.82;
 const CARD_SPACING = 16;
 
+export const VIRAL_ITEMS: CollectionItem[] = [
+  {
+    id: 'figurine-me-up',
+    title: 'Figurine Me Up!',
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: '3d-figurine-factory',
+    title: '3D Figurine Factory',
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'kiss-kiss-1',
+    title: 'Kiss Kiss',
+    badge: 'Hot',
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'kiss-me-to-heaven',
+    title: 'Kiss Me to Heaven',
+    badge: 'New',
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'kiss-kiss-2',
+    title: 'Kiss Kiss',
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+  },
+];
+
+const HALLOWEEN_ITEMS: CollectionItem[] = [
+  {
+    id: 'sweet-horror',
+    title: 'Sweet Horror',
+    badge: 'Hot',
+    image:
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
+  },
+  {
+    id: 'grim-scythe',
+    title: 'Grim Scythe',
+    image:
+      'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
+  },
+  {
+    id: 'starlit-fae',
+    title: 'Starlit Fae',
+    image:
+      'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
+  },
+];
+
 export default function HomeScreen() {
+  const router = useRouter();
+
   const featuredItems = useMemo<FeaturedItem[]>(
     () => [
       {
@@ -54,66 +114,8 @@ export default function HomeScreen() {
     []
   );
 
-  const viralItems = useMemo<CollectionItem[]>(
-    () => [
-      {
-        id: 'figurine-me-up',
-        title: 'Figurine Me Up!',
-        image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
-      },
-      {
-        id: '3d-figurine-factory',
-        title: '3D Figurine Factory',
-        image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
-      },
-      {
-        id: 'kiss-kiss-1',
-        title: 'Kiss Kiss',
-        image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
-      },
-      {
-        id: 'kiss-me-to-heaven',
-        title: 'Kiss Me to Heaven',
-        image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
-      },
-      {
-        id: 'kiss-kiss-2',
-        title: 'Kiss Kiss',
-        image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
-      },
-    ],
-    []
-  );
-
-  const halloweenItems = useMemo<CollectionItem[]>(
-    () => [
-      {
-        id: 'sweet-horror',
-        title: 'Sweet Horror',
-        badge: 'Hot',
-        image:
-          'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
-      },
-      {
-        id: 'grim-scythe',
-        title: 'Grim Scythe',
-        image:
-          'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
-      },
-      {
-        id: 'starlit-fae',
-        title: 'Starlit Fae',
-        image:
-          'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
-      },
-    ],
-    []
-  );
+  const viralItems = useMemo(() => VIRAL_ITEMS, []);
+  const halloweenItems = useMemo(() => HALLOWEEN_ITEMS, []);
 
   const [activeFeature, setActiveFeature] = useState(0);
 
@@ -187,8 +189,14 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <CollectionSection title="Viral" items={viralItems} />
-        <CollectionSection title="Halloween" items={viralItems} />
+        <CollectionSection
+          title="Viral"
+          items={viralItems}
+          onSeeAll={(sectionTitle) =>
+            router.push({ pathname: '/all-items', params: { title: sectionTitle } })
+          }
+        />
+        <CollectionSection title="Halloween" items={halloweenItems} />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -199,16 +207,19 @@ export default function HomeScreen() {
 type CollectionSectionProps = {
   title: string;
   items: CollectionItem[];
+  onSeeAll?: (title: string) => void;
 };
 
-function CollectionSection({ title, items }: CollectionSectionProps) {
+function CollectionSection({ title, items, onSeeAll }: CollectionSectionProps) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Pressable hitSlop={8}>
-          <Text style={styles.sectionLink}>See All</Text>
-        </Pressable>
+        {onSeeAll && (
+          <Pressable hitSlop={8} onPress={() => onSeeAll(title)}>
+            <Text style={styles.sectionLink}>See All</Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
