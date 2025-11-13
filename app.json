@@ -25,6 +25,10 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "extra": {
+      "apiBaseUrl": "https://app-api.pixverse.ai",
+      "apiKey": "sk-06fa06305ed8f94bbe632e8731574cdc"
+    },
     "plugins": [
       "expo-router",
       [
