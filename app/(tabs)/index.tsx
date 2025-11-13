@@ -20,6 +20,7 @@ export type CollectionItem = {
   badge?: 'New' | 'Hot';
   image: string;
   prompt?: string;
+  templateId?: number;
 };
 
 const windowWidth = Dimensions.get('window').width;
@@ -52,6 +53,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     id: 'figurine-me-up',
     title: 'Figurine Me Up!',
     prompt: 'Figurine Me Up!',
+    templateId: 359328847686976,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
   },
@@ -59,6 +61,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     id: '3d-figurine-factory',
     title: '3D Figurine Factory',
     prompt: '3D Figurine Factory',
+    templateId: 359004842664384,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
   },
@@ -67,6 +70,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     title: 'Kiss Kiss',
     prompt: 'Kiss Kiss',
     badge: 'Hot',
+    templateId: 315446315336768,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
   },
@@ -75,15 +79,50 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     title: 'Kiss Me to Heaven',
     prompt: 'Kiss Me to Heaven',
     badge: 'New',
+    templateId: 359166562889024,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
   },
   {
-    id: 'kiss-kiss-2',
-    title: 'Kiss Kiss',
-    prompt: 'Kiss Kiss',
+    id: 'ghostface-terror',
+    title: 'Ghostface Terror',
+    prompt: 'Ghostface Terror',
+    badge: 'Hot',
+    templateId: 362704938833536,
     image:
-      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_scream_250930.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'silly-bird-shimmy',
+    title: 'The Silly Bird Shimmy',
+    prompt: 'The Silly Bird Shimmy',
+    templateId: 367302749516608,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_birdman_251029.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'hi-five-emoji-twin',
+    title: 'Hi-Five Emoji Twin',
+    prompt: 'Hi-Five Emoji Twin',
+    templateId: 351907687030400,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_uandemoji_250803_2.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'earth-zoom-challenge',
+    title: 'Earth Zoom Challenge',
+    prompt: 'Earth Zoom Challenge',
+    templateId: 349110259052160,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_earthzoom_250716.gif?x-oss-process=style/cover-webp',
+  },
+  {
+    id: 'old-photo-revival',
+    title: 'Old Photo Revival',
+    prompt: 'Old Photo Revival',
+    templateId: 346384996936128,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_oldd.gif?x-oss-process=style/cover-webp',
   },
 ];
 
@@ -93,6 +132,7 @@ const HALLOWEEN_ITEMS: CollectionItem[] = [
     title: 'Sweet Horror',
     badge: 'Hot',
     prompt: 'Sweet Horror',
+    templateId: 302325299692608,
     image:
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
   },
@@ -100,6 +140,7 @@ const HALLOWEEN_ITEMS: CollectionItem[] = [
     id: 'grim-scythe',
     title: 'Grim Scythe',
     prompt: 'Grim Scythe',
+    templateId: 302325299692608,
     image:
       'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
   },
@@ -107,6 +148,7 @@ const HALLOWEEN_ITEMS: CollectionItem[] = [
     id: 'starlit-fae',
     title: 'Starlit Fae',
     prompt: 'Starlit Fae',
+    templateId: 302325299692608,
     image:
       'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
   },
@@ -149,6 +191,7 @@ export default function HomeScreen() {
           title: item.title,
           image: item.image,
           prompt: item.prompt ?? item.title,
+          templateId: item.templateId?.toString(),
         },
       });
     },

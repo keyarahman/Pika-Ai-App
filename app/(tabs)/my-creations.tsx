@@ -1,22 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Creation = {
-  id: string;
-  title: string;
-  thumbnail: string;
-  createdAt: string;
-};
+import { useGeneratedVideos } from '@/store/generated-videos';
 
-const creations: Creation[] = [];
 const EMPTY_BUCKET_IMAGE =
   'https://cdn.pixabay.com/photo/2012/04/24/13/18/treasure-40020_640.png';
 
+function formatTimestamp(timestamp?: string) {
+  if (!timestamp) return 'Just now';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'Just now';
+  return date.toLocaleString();
+}
+
 export default function MyCreationsScreen() {
-  const hasCreations = creations.length > 0;
+  const { videos } = useGeneratedVideos();
+  const hasCreations = videos.length > 0;
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -34,21 +38,41 @@ export default function MyCreationsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent</Text>
             <View style={styles.grid}>
-              {creations.map((item) => (
-                <View key={item.id} style={styles.card}>
-                  <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-                  <View style={styles.cardOverlay} />
-                  <View style={styles.cardFooter}>
-                    <View>
-                      <Text style={styles.cardTitle}>{item.title}</Text>
-                      <Text style={styles.cardMeta}>{item.createdAt}</Text>
+              {videos.map((video) => {
+                const thumbnail = video.thumbnail ?? video.url ?? EMPTY_BUCKET_IMAGE;
+                const formattedDate = formatTimestamp(video.create_time ?? video.modify_time);
+                const canOpen = Boolean(video.url);
+
+                return (
+                  <View key={video.id} style={styles.card}>
+                    <Image source={{ uri: thumbnail }} style={styles.thumbnail} contentFit="cover" />
+                    <View style={styles.cardOverlay} />
+                    <View style={styles.cardFooter}>
+                      <View style={styles.cardMetaBlock}>
+                        <Text style={styles.cardTitle} numberOfLines={1}>
+                          {video.prompt ?? 'Generated Video'}
+                        </Text>
+                        <Text style={styles.cardMeta}>{formattedDate}</Text>
+                      </View>
+                      <Pressable
+                        style={[styles.actionButton, !canOpen && styles.actionButtonDisabled]}
+                        disabled={!canOpen}
+                        onPress={() => {
+                          router.push({
+                            pathname: '/view-video/[id]',
+                            params: {
+                              id: String(video.id),
+                              url: video.url ?? '',
+                              prompt: video.prompt ?? '',
+                            },
+                          });
+                        }}>
+                        <Ionicons name={canOpen ? 'play' : 'time'} size={18} color="#fff" />
+                      </Pressable>
                     </View>
-                    <Pressable style={styles.actionButton}>
-                      <Ionicons name="ellipsis-horizontal" size={18} color="#fff" />
-                    </Pressable>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         ) : (
@@ -58,7 +82,9 @@ export default function MyCreationsScreen() {
             <Text style={styles.emptySubtitle}>
               Generate your first AI video and it will appear here as soon as it’s ready.
             </Text>
-            <Pressable style={styles.exploreButton}>
+            <Pressable
+              style={styles.exploreButton}
+              onPress={() => router.push('/(tabs)/explore')}>
               <LinearGradient
                 colors={['#EA6198', '#5B5BFF']}
                 start={{ x: 0, y: 0 }}
@@ -148,6 +174,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  cardMetaBlock: {
+    flex: 1,
+    marginRight: 12,
+  },
   cardTitle: {
     color: '#fff',
     fontSize: 18,
@@ -165,6 +195,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionButtonDisabled: {
+    opacity: 0.4,
   },
   emptySection: {
     marginTop: 12,

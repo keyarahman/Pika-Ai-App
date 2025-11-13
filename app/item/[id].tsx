@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,9 +17,25 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { API_BASE_URL, API_KEY } from '@/constants/api';
+import { API_BASE_URL, API_KEY, VIDEO_POLL_INTERVAL } from '@/constants/api';
+import { useGeneratedVideos } from '@/store/generated-videos';
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+
+type VideoResult = {
+  id?: number;
+  url?: string;
+  video_url?: string;
+  cover_url?: string;
+  status?: number | string;
+  create_time?: string;
+  modify_time?: string;
+  prompt?: string;
+  negative_prompt?: string;
+  outputHeight?: number;
+  outputWidth?: number;
+  size?: number;
+};
 
 const { height: windowHeight } = Dimensions.get('window');
 
@@ -38,13 +54,36 @@ export default function CollectionItemScreen() {
     title?: string;
     image?: string;
     prompt?: string;
+    templateId?: string;
   }>();
+  const { addVideo: addGeneratedVideo } = useGeneratedVideos();
+  const { title, image, prompt, templateId } = useMemo(() => {
+    const resolvedTitle = typeof params.title === 'string' ? params.title : 'Collection';
+    const resolvedPrompt = typeof params.prompt === 'string' ? params.prompt : resolvedTitle;
+    const resolvedImage = typeof params.image === 'string' ? params.image : undefined;
+    const resolvedTemplateId = params.templateId ? Number(params.templateId) : undefined;
+
+    return {
+      title: resolvedTitle,
+      image: resolvedImage,
+      prompt: resolvedPrompt,
+      templateId: Number.isFinite(resolvedTemplateId) ? resolvedTemplateId : undefined,
+    };
+  }, [params.image, params.prompt, params.templateId, params.title]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadedMessage, setUploadedMessage] = useState<string | null>(null);
   const [uploadedAssetInfo, setUploadedAssetInfo] = useState<{ imgId: number; imgUrl?: string } | null>(
     null
   );
+  const [videoStatus, setVideoStatus] = useState<UploadStatus>('idle');
+  const [videoMessage, setVideoMessage] = useState<string | null>(null);
+  const [videoTaskInfo, setVideoTaskInfo] = useState<{ taskId?: string; videoUrl?: string } | null>(
+    null
+  );
+  const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastUploadedAssetRef = useRef<{ imgId: number; imgUrl?: string } | null>(null);
 
   const ensureLibraryPermission = useCallback(async () => {
     const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -75,6 +114,174 @@ export default function CollectionItemScreen() {
     return 'image/jpeg';
   }, []);
 
+  const clearPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const navigateToVideoViewer = useCallback(
+    (videoId: number, fallbackUrl?: string, promptText?: string) => {
+      router.push({
+        pathname: '/view-video/[id]',
+        params: {
+          id: String(videoId),
+          url: fallbackUrl ?? '',
+          prompt: promptText ?? '',
+        },
+      });
+    },
+    [router]
+  );
+
+  const startPollingVideoResult = useCallback(
+    (videoId: number) => {
+      clearPolling();
+      pollingRef.current = setInterval(async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/openapi/v2/video/result/${videoId}`, {
+            headers: {
+              'API-KEY': API_KEY,
+              Accept: 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to fetch video status');
+          }
+
+          const json = await response.json().catch(() => null);
+          const errCode = json?.ErrCode ?? null;
+          if (errCode !== 0) {
+            const errMsg = json?.ErrMsg ?? 'Video status retrieval failed';
+            throw new Error(errMsg);
+          }
+
+          const resp: VideoResult = json?.Resp ?? {};
+          const status = resp?.status;
+
+          setVideoResult(resp);
+
+          if (resp?.id) {
+            const finalVideoId = typeof resp.id === 'number' ? resp.id : videoId;
+            const videoSourceUrl = resp.url ?? resp.video_url;
+            const thumbnail = resp.cover_url ?? lastUploadedAssetRef.current?.imgUrl ?? videoSourceUrl;
+            addGeneratedVideo({
+              id: finalVideoId,
+              url: videoSourceUrl,
+              prompt,
+              create_time: resp.create_time,
+              modify_time: resp.modify_time,
+              outputHeight: resp.outputHeight,
+              outputWidth: resp.outputWidth,
+              size: resp.size,
+              templateId,
+              thumbnail,
+            });
+            navigateToVideoViewer(finalVideoId, videoSourceUrl, prompt);
+            setVideoStatus('success');
+
+          } else if (status === 3 || status === 'failed' || status === 4) {
+            const message = json?.ErrMsg || 'Video generation failed.';
+            setVideoStatus('error');
+            setVideoMessage(message);
+            Alert.alert('Video generation failed', message);
+          }
+        } catch (error) {
+          clearPolling();
+          console.error('Video polling error', error);
+          setVideoStatus('error');
+          const message = error instanceof Error ? error.message : 'Video polling failed';
+          setVideoMessage(message);
+          Alert.alert('Video generation failed', message);
+        }
+      }, VIDEO_POLL_INTERVAL);
+    },
+    [addGeneratedVideo, clearPolling, navigateToVideoViewer, prompt, templateId]
+  );
+
+  const triggerVideoGeneration = useCallback(
+    async (imgId: number) => {
+      if (!API_KEY) {
+        Alert.alert('Missing API key', 'Add your Pixverse API key to continue.');
+        return;
+      }
+      if (!templateId) {
+        setVideoStatus('error');
+        const message = 'Template unavailable for this item.';
+        setVideoMessage(message);
+        Alert.alert('Video generation failed', message);
+        return;
+      }
+
+      try {
+        setVideoStatus('uploading');
+        setVideoMessage(null);
+        setVideoTaskInfo(null);
+
+        const traceId = generateTraceId();
+        const payload = {
+          duration: 5,
+          img_id: imgId,
+          model: 'v4.5',
+          motion_mode: 'normal',
+          negative_prompt: '',
+          prompt,
+          quality: '1080p',
+          template_id: templateId,
+          seed: 0,
+        };
+
+        const response = await fetch(`${API_BASE_URL}/openapi/v2/video/img/generate`, {
+          method: 'POST',
+          headers: {
+            'API-KEY': API_KEY,
+            'Ai-trace-id': traceId,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Video generation failed');
+        }
+
+        const json = await response.json().catch(() => null);
+        const errCode = json?.ErrCode ?? null;
+        if (errCode !== 0) {
+          const errMsg = json?.ErrMsg ?? 'Video generation failed';
+          throw new Error(errMsg);
+        }
+
+        const resp = json?.Resp ?? {};
+        const taskId = typeof resp?.task_id === 'string' ? resp.task_id : undefined;
+        const videoUrl = typeof resp?.video_url === 'string' ? resp.video_url : undefined;
+        const videoId =
+          typeof resp?.id === 'number' ? resp.id : typeof resp?.task_id === 'number' ? resp.task_id : undefined;
+
+        setVideoStatus('success');
+        setVideoMessage('Video generation requested successfully!');
+        setVideoTaskInfo({ taskId, videoUrl });
+        if (typeof videoId === 'number') {
+          startPollingVideoResult(videoId);
+        } else if (typeof resp?.video_id === 'number') {
+          startPollingVideoResult(resp.video_id);
+        }
+      } catch (error) {
+        console.error('Video generation error', error);
+        setVideoStatus('error');
+        const message = error instanceof Error ? error.message : 'Video generation failed';
+        setVideoMessage(message);
+        Alert.alert('Video generation failed', message);
+      }
+    },
+    [prompt, startPollingVideoResult, templateId]
+  );
+
   const uploadAsset = useCallback(
     async (asset: ImagePicker.ImagePickerAsset) => {
       if (!API_KEY) {
@@ -85,6 +292,10 @@ export default function CollectionItemScreen() {
       try {
         setUploadStatus('uploading');
         setUploadedMessage(null);
+        setUploadedAssetInfo(null);
+        setVideoStatus('idle');
+        setVideoMessage(null);
+        setVideoTaskInfo(null);
 
         const formData = new FormData();
         formData.append('image', {
@@ -122,12 +333,13 @@ export default function CollectionItemScreen() {
         const imgUrl = typeof respData?.img_url === 'string' ? respData.img_url : undefined;
 
         setUploadStatus('success');
-        setUploadedAssetInfo(imgId ? { imgId, imgUrl } : null);
+        const assetInfo = imgId ? { imgId, imgUrl } : null;
+        lastUploadedAssetRef.current = assetInfo;
+        setUploadedAssetInfo(assetInfo);
 
-        const message = imgId
-          ? `Image uploaded! img_id: ${imgId}`
-          : 'Image uploaded successfully!';
-        setUploadedMessage(message);
+        if (imgId) {
+          await triggerVideoGeneration(imgId);
+        }
       } catch (error) {
         console.error('Upload error', error);
         setUploadStatus('error');
@@ -138,7 +350,7 @@ export default function CollectionItemScreen() {
         setModalVisible(false);
       }
     },
-    [guessMimeType]
+    [guessMimeType, triggerVideoGeneration]
   );
 
   const handlePickFromLibrary = useCallback(async () => {
@@ -146,7 +358,7 @@ export default function CollectionItemScreen() {
     if (!permitted) return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       quality: 1,
     });
 
@@ -160,7 +372,7 @@ export default function CollectionItemScreen() {
     if (!permitted) return;
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       quality: 1,
     });
 
@@ -169,13 +381,11 @@ export default function CollectionItemScreen() {
     }
   }, [ensureCameraPermission, uploadAsset]);
 
-  const { title, image, prompt } = useMemo(() => {
-    return {
-      title: typeof params.title === 'string' ? params.title : 'Collection',
-      image: typeof params.image === 'string' ? params.image : undefined,
-      prompt: typeof params.prompt === 'string' ? params.prompt : undefined,
+  useEffect(() => {
+    return () => {
+      clearPolling();
     };
-  }, [params.image, params.prompt, params.title]);
+  }, [clearPolling]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -184,9 +394,7 @@ export default function CollectionItemScreen() {
         <Pressable style={styles.iconButton} onPress={() => router.back()}>
           <Ionicons name="close" size={22} color="#FFFFFF" />
         </Pressable>
-        {/* <Pressable style={styles.iconButton}>
-          <Ionicons name="ellipsis-vertical" size={22} color="#FFFFFF" />
-        </Pressable> */}
+
       </View>
 
       <View style={styles.mediaContainer}>
@@ -220,24 +428,7 @@ export default function CollectionItemScreen() {
             </Text>
           </View>
         </Pressable>
-        {uploadedMessage && (
-          <Text
-            style={[styles.uploadFeedback, uploadStatus === 'error' ? styles.uploadFeedbackError : null]}
-            numberOfLines={2}>
-            {uploadedMessage}
-          </Text>
-        )}
-        {uploadedAssetInfo && (
-          <View style={styles.uploadMeta}>
-            <Text style={styles.uploadMetaLabel}>Saved img_id</Text>
-            <Text style={styles.uploadMetaValue}>{uploadedAssetInfo.imgId}</Text>
-            {uploadedAssetInfo.imgUrl && (
-              <Text style={styles.uploadMetaUrl} numberOfLines={1}>
-                {uploadedAssetInfo.imgUrl}
-              </Text>
-            )}
-          </View>
-        )}
+
       </View>
 
       <Modal
@@ -268,7 +459,7 @@ export default function CollectionItemScreen() {
         </Pressable>
       </Modal>
 
-      {uploadStatus === 'uploading' && (
+      {(uploadStatus === 'uploading' || videoStatus === 'uploading') && (
         <View style={styles.uploadOverlay} pointerEvents="auto">
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -395,6 +586,17 @@ const styles = StyleSheet.create({
   uploadMetaUrl: {
     color: '#6F7CB3',
     fontSize: 12,
+  },
+  uploadMetaSuccess: {
+    borderColor: 'rgba(99, 203, 147, 0.3)',
+    borderWidth: 1,
+  },
+  uploadMetaError: {
+    borderColor: 'rgba(255, 111, 127, 0.4)',
+    borderWidth: 1,
+  },
+  uploadMetaValueError: {
+    color: '#FF6F7F',
   },
   modalOverlay: {
     flex: 1,
