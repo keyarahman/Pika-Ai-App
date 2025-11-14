@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer, type VideoSource } from 'expo-video';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -15,6 +18,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useGeneratedVideos } from '@/store/generated-videos';
+
+const DOWNLOADS_KEY = 'downloaded-video-local-uris';
 
 export default function ViewVideoScreen() {
   const router = useRouter();
@@ -37,6 +42,8 @@ export default function ViewVideoScreen() {
 
   const [isOptionsVisible, setOptionsVisible] = useState(false);
   const [isDownloading, setDownloading] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(false);
+  const [localUri, setLocalUri] = useState<string | null>(null);
 
   const initialSource = useMemo<VideoSource>(() => ({ uri: videoUrl ?? 'data:,' }), [videoUrl]);
   const player = useVideoPlayer(initialSource, (playerInstance) => {
@@ -67,6 +74,25 @@ export default function ViewVideoScreen() {
     };
   }, [player, videoUrl]);
 
+  useEffect(() => {
+    if (videoId === undefined) return;
+    const load = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(DOWNLOADS_KEY);
+        if (!raw) return;
+        const parsed: Record<string | number, string> = JSON.parse(raw);
+        const storedUri = parsed?.[videoId];
+        if (storedUri) {
+          setIsDownloaded(true);
+          setLocalUri(storedUri);
+        }
+      } catch (error) {
+        console.warn('Failed to load downloaded video mapping', error);
+      }
+    };
+    load();
+  }, [videoId]);
+
   const handleClose = useCallback(() => {
     router.back();
   }, [router]);
@@ -83,19 +109,45 @@ export default function ViewVideoScreen() {
   const handleDownload = useCallback(async () => {
     if (!videoUrl) return;
 
+    setOptionsVisible(false);
+    setDownloading(true);
+
     try {
-      setDownloading(true);
-      const baseDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory ?? 'file:///';
-      const sanitizedBase = baseDir.endsWith('/') ? baseDir : `${baseDir}/`;
-      const fileUri = `${sanitizedBase}pixverse-${Date.now()}.mp4`;
-      const result = await FileSystem.downloadAsync(videoUrl, fileUri);
+      const fileName = `pixverse-video-${videoId ?? 'untitled'}-${Date.now()}.mp4`;
+      const dir = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? 'file:///';
+      const sanitizedDir = dir.endsWith('/') ? dir : `${dir}/`;
+      const fileUri = `${sanitizedDir}${fileName}`;
+      console.log('fileUri', fileUri);
+      const downloadRes = await FileSystem.downloadAsync(videoUrl, fileUri);
+      console.log('downloadRes', downloadRes);
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      console.log('media library permission', status);
+      if (status !== 'granted') {
+        setDownloading(false);
+        Alert.alert('Permission Required', 'Media library permission is required to save videos.');
+        return;
+      }
+      const asset = await MediaLibrary.createAssetAsync(downloadRes.uri);
+      console.log('asset', asset);
+      try {
+        const raw = await AsyncStorage.getItem(DOWNLOADS_KEY);
+        const parsed: Record<string | number, string> = raw ? JSON.parse(raw) : {};
+        parsed[videoId ?? Date.now()] = asset.uri;
+        await AsyncStorage.setItem(DOWNLOADS_KEY, JSON.stringify(parsed));
+        setIsDownloaded(true);
+        setLocalUri(asset.uri);
+      } catch (mapError) {
+        console.warn('Failed to persist download mapping', mapError);
+      }
+
       setDownloading(false);
-      Alert.alert('Download complete', `Saved to: ${result.uri}`);
+      Alert.alert('Download Successful', 'Video saved to your photo album!');
     } catch (error) {
       setDownloading(false);
-      Alert.alert('Download failed', error instanceof Error ? error.message : 'Unable to download this video.');
+      const message = error instanceof Error ? error.message : 'Unable to download this video.';
+      Alert.alert('Download Failed', message);
     }
-  }, [videoUrl]);
+  }, [videoId, videoUrl]);
 
   if (!videoUrl) {
     return (
@@ -160,6 +212,14 @@ export default function ViewVideoScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      {isDownloading && (
+        <View style={styles.loadingOverlay} pointerEvents="auto">
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.loadingText}>Downloading video...</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -286,5 +346,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(9, 7, 15, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
   },
 });
