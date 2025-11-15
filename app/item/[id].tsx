@@ -254,7 +254,7 @@ export default function CollectionItemScreen() {
           motion_mode: 'normal',
           negative_prompt: '',
           prompt,
-          quality: '1080p',
+          quality: '540p',
           template_id: templateId,
           seed: 0,
         };

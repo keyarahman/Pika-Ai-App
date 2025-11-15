@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
@@ -12,27 +12,37 @@ export const unstable_settings = {
 };
 
 function RootLayoutNav() {
-  const segments = useSegments();
   const router = useRouter();
   const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkOnboarding = async () => {
       try {
         const seen = await hasSeenOnboarding();
-        setIsOnboardingChecked(true);
         
-        if (!seen && segments[0] !== 'onboarding') {
-          router.replace('/onboarding');
+        if (isMounted) {
+          setIsOnboardingChecked(true);
+          
+          if (!seen) {
+            router.replace('/onboarding');
+          }
         }
       } catch (error) {
         console.warn('Failed to check onboarding status', error);
-        setIsOnboardingChecked(true);
+        if (isMounted) {
+          setIsOnboardingChecked(true);
+        }
       }
     };
 
     checkOnboarding();
-  }, [segments, router]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   if (!isOnboardingChecked) {
     return null;
