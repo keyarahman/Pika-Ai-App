@@ -126,7 +126,7 @@ export default function ViewVideoScreen() {
   }, [videoId]);
 
   const handleClose = useCallback(() => {
-    router.back();
+    router.replace('/(tabs)');
   }, [router]);
 
   const handleShare = useCallback(async () => {

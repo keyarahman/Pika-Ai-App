@@ -82,8 +82,11 @@ export default function CollectionItemScreen() {
     null
   );
   const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUploadedAssetRef = useRef<{ imgId: number; imgUrl?: string } | null>(null);
+  const hasNavigatedRef = useRef(false);
 
   const ensureLibraryPermission = useCallback(async () => {
     const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,6 +126,11 @@ export default function CollectionItemScreen() {
 
   const navigateToVideoViewer = useCallback(
     (videoId: number, fallbackUrl?: string, promptText?: string) => {
+      if (hasNavigatedRef.current) return;
+      hasNavigatedRef.current = true;
+      clearPolling();
+      setIsGeneratingVideo(false);
+      setVideoStatus('success')
       router.push({
         pathname: '/view-video/[id]',
         params: {
@@ -132,13 +140,19 @@ export default function CollectionItemScreen() {
         },
       });
     },
-    [router]
+    [router, clearPolling]
   );
 
   const startPollingVideoResult = useCallback(
     (videoId: number) => {
       clearPolling();
+      setIsGeneratingVideo(true);
+      hasNavigatedRef.current = false;
       pollingRef.current = setInterval(async () => {
+        if (hasNavigatedRef.current) {
+          clearPolling();
+          return;
+        }
         try {
           const response = await fetch(`${API_BASE_URL}/openapi/v2/video/result/${videoId}`, {
             headers: {
@@ -164,7 +178,11 @@ export default function CollectionItemScreen() {
 
           setVideoResult(resp);
 
-          if (resp?.id) {
+          if (resp?.id && resp?.url) {
+            if (hasNavigatedRef.current) {
+              clearPolling();
+              return;
+            }
             const finalVideoId = typeof resp.id === 'number' ? resp.id : videoId;
             const videoSourceUrl = resp.url ?? resp.video_url;
             const thumbnail = resp.cover_url ?? lastUploadedAssetRef.current?.imgUrl ?? videoSourceUrl;
@@ -181,9 +199,11 @@ export default function CollectionItemScreen() {
               thumbnail,
             });
             navigateToVideoViewer(finalVideoId, videoSourceUrl, prompt);
-            setVideoStatus('success');
+            
 
           } else if (status === 3 || status === 'failed' || status === 4) {
+            clearPolling();
+            setIsGeneratingVideo(false);
             const message = json?.ErrMsg || 'Video generation failed.';
             setVideoStatus('error');
             setVideoMessage(message);
@@ -191,6 +211,7 @@ export default function CollectionItemScreen() {
           }
         } catch (error) {
           clearPolling();
+          setIsGeneratingVideo(false);
           console.error('Video polling error', error);
           setVideoStatus('error');
           const message = error instanceof Error ? error.message : 'Video polling failed';
@@ -247,7 +268,21 @@ export default function CollectionItemScreen() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || 'Video generation failed');
+          let errorMessage = 'Video generation failed';
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson?.ErrMsg) {
+              errorMessage = errorJson.ErrMsg;
+            } else if (errorJson?.message) {
+              errorMessage = errorJson.message;
+            }
+          } catch {
+            // If not JSON, use the text as is or a default message
+            if (errorText && errorText.length < 200) {
+              errorMessage = errorText;
+            }
+          }
+          throw new Error(errorMessage);
         }
 
         const json = await response.json().catch(() => null);
@@ -273,8 +308,19 @@ export default function CollectionItemScreen() {
         }
       } catch (error) {
         console.error('Video generation error', error);
+        setIsGeneratingVideo(false);
         setVideoStatus('error');
-        const message = error instanceof Error ? error.message : 'Video generation failed';
+        let message = 'Video generation failed';
+
+        if (error instanceof Error) {
+          message = error.message;
+          // Parse common error messages to make them more user-friendly
+          if (message.length > 100) {
+            // If error message is too long, use a shorter version
+            message = 'Video generation failed. Please try again.';
+          }
+        }
+
         setVideoMessage(message);
         Alert.alert('Video generation failed', message);
       }
@@ -283,12 +329,15 @@ export default function CollectionItemScreen() {
   );
 
   const uploadAsset = useCallback(
+
     async (asset: ImagePicker.ImagePickerAsset) => {
+
       if (!API_KEY) {
         Alert.alert('Missing API key', 'Add your Pixverse API key to continue.');
         return;
       }
-
+      setModalVisible(false);
+      setImageLoading(false);
       try {
         setUploadStatus('uploading');
         setUploadedMessage(null);
@@ -318,7 +367,21 @@ export default function CollectionItemScreen() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(errorText || 'Upload failed');
+          let errorMessage = 'Upload failed';
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson?.ErrMsg) {
+              errorMessage = errorJson.ErrMsg;
+            } else if (errorJson?.message) {
+              errorMessage = errorJson.message;
+            }
+          } catch {
+            // If not JSON, use the text as is or a default message
+            if (errorText && errorText.length < 200) {
+              errorMessage = errorText;
+            }
+          }
+          throw new Error(errorMessage);
         }
 
         const payload = await response.json().catch(() => null);
@@ -341,9 +404,27 @@ export default function CollectionItemScreen() {
           await triggerVideoGeneration(imgId);
         }
       } catch (error) {
+        setVideoStatus('error');
         console.error('Upload error', error);
+        setIsGeneratingVideo(false);
         setUploadStatus('error');
-        const message = error instanceof Error ? error.message : 'Upload failed';
+        let message = 'Upload failed';
+
+        if (error instanceof Error) {
+          message = error.message;
+          // Parse common error messages to make them more user-friendly
+          if (message.includes('incorrect image width or height')) {
+            message = 'Image dimensions are incorrect. Please use a clear, front-facing image with standard dimensions.';
+          } else if (message.includes('image') && message.includes('size')) {
+            message = 'Image size is too large or too small. Please try a different image.';
+          } else if (message.includes('format') || message.includes('type')) {
+            message = 'Unsupported image format. Please use JPG or PNG.';
+          } else if (message.length > 100) {
+            // If error message is too long, use a shorter version
+            message = 'Upload failed. Please check your image and try again.';
+          }
+        }
+
         setUploadedMessage(message);
         Alert.alert('Upload failed', message);
       } finally {
@@ -368,6 +449,7 @@ export default function CollectionItemScreen() {
   }, [ensureLibraryPermission, uploadAsset]);
 
   const handleCapturePhoto = useCallback(async () => {
+
     const permitted = await ensureCameraPermission();
     if (!permitted) return;
 
@@ -387,6 +469,12 @@ export default function CollectionItemScreen() {
     };
   }, [clearPolling]);
 
+  useEffect(() => {
+    if (image) {
+      setImageLoading(true);
+    }
+  }, [image]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" translucent />
@@ -399,7 +487,21 @@ export default function CollectionItemScreen() {
 
       <View style={styles.mediaContainer}>
         {image ? (
-          <Image source={{ uri: image }} style={styles.media} contentFit="cover" />
+          <>
+            <Image
+              source={{ uri: image }}
+              style={styles.media}
+              contentFit="cover"
+              onLoadStart={() => setImageLoading(true)}
+              onLoadEnd={() => setImageLoading(false)}
+              onError={() => setImageLoading(false)}
+            />
+            {imageLoading && (
+              <View style={styles.imageLoadingOverlay}>
+                <ActivityIndicator size="large" color="#FFFFFF" />
+              </View>
+            )}
+          </>
         ) : (
           <View style={[styles.media, styles.mediaPlaceholder]}>
             <Text style={styles.mediaPlaceholderText}>No preview available</Text>
@@ -443,7 +545,7 @@ export default function CollectionItemScreen() {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Animate an Image</Text>
             <Text style={styles.modalSubtitle}>
-              Choose a source to upload an image and start creating.
+              Upload a clear, front-facing image to get started.
             </Text>
             <View style={styles.modalOptions}>
               <Pressable style={styles.modalOption} onPress={handleCapturePhoto}>
@@ -492,10 +594,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   media: {
     width: '100%',
     height: windowHeight * 0.55,
+  },
+  imageLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(8, 7, 12, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mediaPlaceholder: {
     backgroundColor: '#1E1B2D',
