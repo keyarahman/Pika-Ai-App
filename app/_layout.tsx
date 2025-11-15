@@ -37,6 +37,7 @@ export default function RootLayout() {
             gestureDirection: 'vertical',
           }}
         />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="light" translucent animated />
