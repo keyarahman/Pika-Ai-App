@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useGeneratedVideos } from '@/store/generated-videos';
@@ -18,9 +19,45 @@ function formatTimestamp(timestamp?: string) {
 }
 
 export default function MyCreationsScreen() {
-  const { videos } = useGeneratedVideos();
+  const { videos, removeVideo } = useGeneratedVideos();
   const hasCreations = videos.length > 0;
   const router = useRouter();
+  const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+
+  const handleOpenMenu = (videoId: number) => {
+    setSelectedVideoId(videoId);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsDeleteModalVisible(false);
+    setSelectedVideoId(null);
+  };
+
+  const handleDelete = () => {
+    if (selectedVideoId === null) return;
+
+    Alert.alert(
+      'Delete Video',
+      'Are you sure you want to delete this video? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: handleCloseModal,
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            removeVideo(selectedVideoId);
+            handleCloseModal();
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -47,6 +84,11 @@ export default function MyCreationsScreen() {
                   <View key={video.id} style={styles.card}>
                     <Image source={{ uri: thumbnail }} style={styles.thumbnail} contentFit="cover" />
                     <View style={styles.cardOverlay} />
+                    <Pressable
+                      style={styles.menuButton}
+                      onPress={() => handleOpenMenu(video.id)}>
+                      <Ionicons name="ellipsis-vertical" size={18} color="#fff" />
+                    </Pressable>
                     <View style={styles.cardFooter}>
                       <View style={styles.cardMetaBlock}>
                         <Text style={styles.cardTitle} numberOfLines={1}>
@@ -96,6 +138,27 @@ export default function MyCreationsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={isDeleteModalVisible}
+        onRequestClose={handleCloseModal}>
+        <Pressable style={styles.modalOverlay} onPress={handleCloseModal}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Video Options</Text>
+              <Pressable onPress={handleCloseModal}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </Pressable>
+            </View>
+            <Pressable style={styles.deleteButton} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={20} color="#FF6F7F" />
+              <Text style={styles.deleteButtonText}>Delete Video</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -150,13 +213,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   grid: {
-    gap: 18,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   card: {
+    width: '48%',
     height: 200,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#1E1B2D',
+    marginBottom: 12,
   },
   thumbnail: {
     ...StyleSheet.absoluteFillObject,
@@ -164,6 +231,18 @@ const styles = StyleSheet.create({
   cardOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10, 7, 16, 0.35)',
+  },
+  menuButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   cardFooter: {
     position: 'absolute',
@@ -239,6 +318,43 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'rgba(18, 15, 25, 0.98)',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 24,
+    paddingBottom: 32,
+    paddingHorizontal: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 111, 127, 0.1)',
+  },
+  deleteButtonText: {
+    color: '#FF6F7F',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

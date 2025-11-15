@@ -125,12 +125,16 @@ export default function CollectionItemScreen() {
   }, []);
 
   const navigateToVideoViewer = useCallback(
-    (videoId: number, fallbackUrl?: string, promptText?: string) => {
+    async (videoId: number, fallbackUrl?: string, promptText?: string) => {
       if (hasNavigatedRef.current) return;
       hasNavigatedRef.current = true;
       clearPolling();
       setIsGeneratingVideo(false);
-      setVideoStatus('success')
+      setVideoStatus('success');
+      
+      // Small delay to ensure store is updated before navigation
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      
       router.push({
         pathname: '/view-video/[id]',
         params: {
@@ -298,7 +302,7 @@ export default function CollectionItemScreen() {
         const videoId =
           typeof resp?.id === 'number' ? resp.id : typeof resp?.task_id === 'number' ? resp.task_id : undefined;
 
-        setVideoStatus('success');
+        // setVideoStatus('success');
         setVideoMessage('Video generation requested successfully!');
         setVideoTaskInfo({ taskId, videoUrl });
         if (typeof videoId === 'number') {

@@ -11,12 +11,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PRO_PLANS } from './(tabs)/index';
 
 export default function SettingsModal() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleUpgrade = () => {
     router.replace('/pro-modal');
@@ -49,8 +50,8 @@ export default function SettingsModal() {
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Pressable style={styles.closeButton} onPress={() => router.back()}>
             <Ionicons name="close" size={20} color="#0F0D16" />
           </Pressable>
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 12,
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },

@@ -48,15 +48,19 @@ export default function ViewVideoScreen() {
 
   const initialSource = useMemo<VideoSource>(() => ({ uri: videoUrl ?? 'data:,' }), [videoUrl]);
   const player = useVideoPlayer(initialSource, (playerInstance) => {
+    console.log('Video player ready',initialSource,videoUrl);
     playerInstance.loop = true;
     try {
       playerInstance.play();
     } catch {
+      console.log('Autoplay failed');
       // ignore autoplay issues
     }
   });
 
   useEffect(() => {
+            console.log('Video sok',videoUrl);
+
     if (!videoUrl) {
       setIsVideoLoading(false);
       return;
@@ -68,6 +72,7 @@ export default function ViewVideoScreen() {
     const load = async () => {
       try {
         await player.replaceAsync({ uri: videoUrl });
+        console.log('Video source set, starting playback',videoUrl);
         if (isMounted) {
           player.play();
           // Wait for video to be ready - check duration or wait a bit for buffering
@@ -104,7 +109,7 @@ export default function ViewVideoScreen() {
       if (checkReadyInterval) clearInterval(checkReadyInterval);
       if (fallbackTimeout) clearTimeout(fallbackTimeout);
     };
-  }, [player, videoUrl]);
+  }, [player, videoUrl,params.url]);
 
   useEffect(() => {
     if (videoId === undefined) return;

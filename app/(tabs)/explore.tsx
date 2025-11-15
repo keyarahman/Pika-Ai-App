@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleGroup: {
-    // marginTop: 32,
+    marginTop: 15,
     gap: 8,
   },
   title: {

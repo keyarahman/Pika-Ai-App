@@ -11,12 +11,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PRO_PLANS } from './(tabs)/index';
 
 export default function ProModalScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] =
     useState<(typeof PRO_PLANS)[number]['id']>('yearly');
   const plans = useMemo(() => PRO_PLANS, []);
@@ -32,8 +33,8 @@ export default function ProModalScreen() {
         style={styles.heroGradient}
       />
 
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
           <Pressable style={styles.closeButton} onPress={() => router.back()}>
             <Ionicons name="close" size={20} color="#0F0D16" />
           </Pressable>
@@ -184,7 +185,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
