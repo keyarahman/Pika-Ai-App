@@ -24,6 +24,10 @@ export default function ProModalScreen() {
   const heroUri =
     'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=1200&q=80';
 
+  const handleClose = () => {
+    router.replace('/(tabs)');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent />
@@ -35,7 +39,7 @@ export default function ProModalScreen() {
 
       <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
         <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-          <Pressable style={styles.closeButton} onPress={() => router.back()}>
+          <Pressable style={styles.closeButton} onPress={handleClose}>
             <Ionicons name="close" size={20} color="#0F0D16" />
           </Pressable>
 
@@ -207,7 +211,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     paddingHorizontal: 20,
-    paddingBottom: 36,
+    paddingBottom: 16,marginTop:10
   },
   blurCard: {
     borderRadius: 40,

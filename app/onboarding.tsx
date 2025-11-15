@@ -1,0 +1,212 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { VIRAL_ITEMS, type CollectionItem } from './(tabs)/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ONBOARDING_KEY = 'has-seen-onboarding';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+export default function OnboardingScreen() {
+  const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const onboardingItems = useMemo(() => {
+    const shuffled = shuffleArray(VIRAL_ITEMS);
+    return shuffled.slice(0, 3);
+  }, []);
+
+  const handleScroll = useCallback((event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    setCurrentIndex(index);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < onboardingItems.length - 1) {
+      const nextIndex = currentIndex + 1;
+      scrollViewRef.current?.scrollTo({
+        x: nextIndex * SCREEN_WIDTH,
+        animated: true,
+      });
+      setCurrentIndex(nextIndex);
+    }
+  }, [currentIndex, onboardingItems.length]);
+
+  const handleGetStarted = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      router.replace('/pro-modal');
+    } catch (error) {
+      console.warn('Failed to save onboarding status', error);
+      router.replace('/pro-modal');
+    }
+  }, [router]);
+
+  const isLastSlide = currentIndex === onboardingItems.length - 1;
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="light" translucent />
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.scrollView}>
+        {onboardingItems.map((item, index) => (
+          <View key={item.id} style={[styles.slide, { width: SCREEN_WIDTH }]}>
+            <Image source={{ uri: item.image }} style={styles.slideImage} contentFit="cover" />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.7)', '#000']}
+              style={styles.gradient}
+            />
+            <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+              <View style={styles.slideContent}>
+                <Text style={styles.slideTitle}>{item.title}</Text>
+                <Text style={styles.slideSubtitle}>
+                  {index === onboardingItems.length - 1
+                    ? 'Start creating amazing AI videos'
+                    : `Transform your photos with ${item.title}`}
+                </Text>
+                <View style={styles.dotsContainer}>
+                  {onboardingItems.map((_, dotIndex) => (
+                    <View
+                      key={dotIndex}
+                      style={[
+                        styles.dot,
+                        dotIndex === currentIndex && styles.dotActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Pressable
+                  style={styles.continueButton}
+                  onPress={isLastSlide ? handleGetStarted : handleNext}>
+                  <LinearGradient
+                    colors={['#EA6198', '#5B5BFF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.buttonGradient}
+                  />
+                  <Text style={styles.continueButtonText}>
+                    {isLastSlide ? 'Get Started' : 'Continue'}
+                  </Text>
+                </Pressable>
+              </View>
+            </SafeAreaView>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+export async function hasSeenOnboarding(): Promise<boolean> {
+  try {
+    const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+    return value === 'true';
+  } catch {
+    return false;
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  safeArea: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  slide: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  slideImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  slideContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    gap: 12,
+  },
+  slideTitle: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  slideSubtitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '500',
+    opacity: 0.9,
+    marginBottom: 32,
+  },
+  continueButton: {
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+});
+

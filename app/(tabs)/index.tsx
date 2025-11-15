@@ -203,7 +203,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.stickyHeader}>
-        <Pressable style={styles.iconButton} onPress={() => router.push('/search')}>
+        <Pressable style={styles.iconButton}>
           <Ionicons name="search" size={24} color="#fff" />
         </Pressable>
 
