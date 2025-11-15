@@ -44,6 +44,7 @@ export default function ViewVideoScreen() {
   const [isDownloading, setDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [localUri, setLocalUri] = useState<string | null>(null);
+  const [isVideoLoading, setIsVideoLoading] = useState(!!videoUrl);
 
   const initialSource = useMemo<VideoSource>(() => ({ uri: videoUrl ?? 'data:,' }), [videoUrl]);
   const player = useVideoPlayer(initialSource, (playerInstance) => {
@@ -56,21 +57,52 @@ export default function ViewVideoScreen() {
   });
 
   useEffect(() => {
-    if (!videoUrl) return;
+    if (!videoUrl) {
+      setIsVideoLoading(false);
+      return;
+    }
+    setIsVideoLoading(true);
     let isMounted = true;
+    let checkReadyInterval: ReturnType<typeof setInterval> | null = null;
+    let fallbackTimeout: ReturnType<typeof setTimeout> | null = null;
     const load = async () => {
       try {
         await player.replaceAsync({ uri: videoUrl });
         if (isMounted) {
           player.play();
+          // Wait for video to be ready - check duration or wait a bit for buffering
+          checkReadyInterval = setInterval(() => {
+            if (!isMounted) {
+              if (checkReadyInterval) clearInterval(checkReadyInterval);
+              return;
+            }
+            // Video is ready when duration is available and > 0
+            if (player.duration > 0) {
+              if (checkReadyInterval) clearInterval(checkReadyInterval);
+              if (fallbackTimeout) clearTimeout(fallbackTimeout);
+              setIsVideoLoading(false);
+            }
+          }, 100);
+          // Fallback timeout in case duration never becomes available
+          fallbackTimeout = setTimeout(() => {
+            if (checkReadyInterval) clearInterval(checkReadyInterval);
+            if (isMounted) {
+              setIsVideoLoading(false);
+            }
+          }, 5000);
         }
       } catch (error) {
         console.warn('Failed to start video playback', error);
+        if (isMounted) {
+          setIsVideoLoading(false);
+        }
       }
     };
     load();
     return () => {
       isMounted = false;
+      if (checkReadyInterval) clearInterval(checkReadyInterval);
+      if (fallbackTimeout) clearTimeout(fallbackTimeout);
     };
   }, [player, videoUrl]);
 
@@ -212,6 +244,14 @@ export default function ViewVideoScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      {isVideoLoading && (
+        <View style={styles.loadingOverlay} pointerEvents="auto">
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.loadingText}>Loading video...</Text>
+          </View>
+        </View>
+      )}
       {isDownloading && (
         <View style={styles.loadingOverlay} pointerEvents="auto">
           <View style={styles.loadingContent}>
