@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Dimensions,
   FlatList,
@@ -12,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CollectionItem, VIRAL_ITEMS } from './(tabs)/index';
 
@@ -39,6 +39,8 @@ export default function AllItemsScreen() {
           title: item.title,
           image: item.image,
           prompt: item.prompt ?? item.title,
+          templateId: item.templateId?.toString(),
+          videUrl: item.videUrl,
         },
       });
     },

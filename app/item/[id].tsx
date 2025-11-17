@@ -4,10 +4,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { VideoView, useVideoPlayer, type VideoSource } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   Modal,
   Pressable,
@@ -55,21 +57,24 @@ export default function CollectionItemScreen() {
     image?: string;
     prompt?: string;
     templateId?: string;
+    videUrl?: string;
   }>();
   const { addVideo: addGeneratedVideo } = useGeneratedVideos();
-  const { title, image, prompt, templateId } = useMemo(() => {
+  const { title, image, prompt, templateId, videoUrl } = useMemo(() => {
     const resolvedTitle = typeof params.title === 'string' ? params.title : 'Collection';
     const resolvedPrompt = typeof params.prompt === 'string' ? params.prompt : resolvedTitle;
     const resolvedImage = typeof params.image === 'string' ? params.image : undefined;
     const resolvedTemplateId = params.templateId ? Number(params.templateId) : undefined;
+    const resolvedVideoUrl = typeof params.videUrl === 'string' ? params.videUrl : undefined;
 
     return {
       title: resolvedTitle,
       image: resolvedImage,
       prompt: resolvedPrompt,
       templateId: Number.isFinite(resolvedTemplateId) ? resolvedTemplateId : undefined,
+      videoUrl: resolvedVideoUrl,
     };
-  }, [params.image, params.prompt, params.templateId, params.title]);
+  }, [params.image, params.prompt, params.templateId, params.title, params.videUrl]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadedMessage, setUploadedMessage] = useState<string | null>(null);
@@ -84,9 +89,69 @@ export default function CollectionItemScreen() {
   const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUploadedAssetRef = useRef<{ imgId: number; imgUrl?: string } | null>(null);
   const hasNavigatedRef = useRef(false);
+
+  // Video player setup for video URLs
+  const initialVideoSource = useMemo<VideoSource>(() => {
+    if (videoUrl) {
+      return { uri: videoUrl };
+    }
+    return { uri: 'data:,' };
+  }, [videoUrl]);
+
+  const videoPlayer = useVideoPlayer(initialVideoSource, (player) => {
+    player.loop = true;
+    player.muted = false; // Enable sound
+    try {
+      player.play();
+    } catch {
+      // ignore autoplay issues
+    }
+  });
+
+  // Update video source when videoUrl changes
+  useEffect(() => {
+    if (videoUrl) {
+      setVideoProgress(0);
+      progressAnim.setValue(0);
+      videoPlayer.replaceAsync({ uri: videoUrl }).catch((error) => {
+        console.warn('Failed to load video', error);
+      });
+    }
+  }, [videoUrl, videoPlayer, progressAnim]);
+
+  // Track video progress
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    const updateProgress = () => {
+      const currentTime = videoPlayer.currentTime;
+      const duration = videoPlayer.duration;
+
+      if (duration > 0) {
+        setVideoDuration(duration);
+        const progress = Math.min(Math.max(currentTime / duration, 0), 1);
+        setVideoProgress(progress);
+        // Animate progress bar smoothly
+        Animated.timing(progressAnim, {
+          toValue: progress,
+          duration: 100,
+          useNativeDriver: false,
+        }).start();
+      }
+    };
+
+    const interval = setInterval(updateProgress, 100); // Update every 100ms
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [videoUrl, videoPlayer, progressAnim]);
 
   const ensureLibraryPermission = useCallback(async () => {
     const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -131,10 +196,10 @@ export default function CollectionItemScreen() {
       clearPolling();
       setIsGeneratingVideo(false);
       setVideoStatus('success');
-      
+
       // Small delay to ensure store is updated before navigation
       await new Promise((resolve) => setTimeout(resolve, 200));
-      
+
       router.push({
         pathname: '/view-video/[id]',
         params: {
@@ -203,7 +268,7 @@ export default function CollectionItemScreen() {
               thumbnail,
             });
             navigateToVideoViewer(finalVideoId, videoSourceUrl, prompt);
-            
+
 
           } else if (status === 3 || status === 'failed' || status === 4) {
             clearPolling();
@@ -490,7 +555,14 @@ export default function CollectionItemScreen() {
       </View>
 
       <View style={styles.mediaContainer}>
-        {image ? (
+        {videoUrl ? (
+          <VideoView
+            player={videoPlayer}
+            style={styles.media}
+            contentFit="cover"
+            nativeControls={false}
+          />
+        ) : image ? (
           <>
             <Image
               source={{ uri: image }}
@@ -518,7 +590,19 @@ export default function CollectionItemScreen() {
           <Text style={styles.promptTitle}>{prompt ?? title}</Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={styles.progressIndicator} />
+          <Animated.View
+            style={[
+              styles.progressIndicator,
+              {
+                width: videoUrl && videoDuration > 0
+                  ? progressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0%', '100%'],
+                  })
+                  : '25%',
+              },
+            ]}
+          />
         </View>
         <Pressable style={styles.primaryButton} onPress={() => setModalVisible(true)}>
           <LinearGradient

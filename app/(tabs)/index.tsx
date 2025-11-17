@@ -21,6 +21,7 @@ export type CollectionItem = {
   image: string;
   prompt?: string;
   templateId?: number;
+  videUrl?: string;
 };
 
 const windowWidth = Dimensions.get('window').width;
@@ -56,6 +57,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359328847686976,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
   },
   {
     id: '3d-figurine-factory',
@@ -64,6 +66,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359004842664384,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'kiss-kiss-1',
@@ -73,6 +77,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 315446315336768,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'kiss-me-to-heaven',
@@ -82,6 +88,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359166562889024,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'ghostface-terror',
@@ -91,6 +99,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 362704938833536,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_scream_250930.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'silly-bird-shimmy',
@@ -99,6 +109,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 367302749516608,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_birdman_251029.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'hi-five-emoji-twin',
@@ -107,6 +119,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 351907687030400,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_uandemoji_250803_2.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'earth-zoom-challenge',
@@ -115,6 +129,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 349110259052160,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_earthzoom_250716.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
   {
     id: 'old-photo-revival',
@@ -123,6 +139,8 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 346384996936128,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_oldd.gif?x-oss-process=style/cover-webp',
+    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+
   },
 ];
 
@@ -192,6 +210,7 @@ export default function HomeScreen() {
           image: item.image,
           prompt: item.prompt ?? item.title,
           templateId: item.templateId?.toString(),
+          videUrl: item.videUrl,
         },
       });
     },
