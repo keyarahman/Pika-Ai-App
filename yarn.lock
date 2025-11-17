@@ -4322,6 +4322,7 @@ __metadata:
     expo-font: ~14.0.9
     expo-haptics: ~15.0.7
     expo-image: ~3.0.10
+    expo-image-manipulator: ~14.0.7
     expo-image-picker: ~17.0.8
     expo-linear-gradient: ~15.0.7
     expo-linking: ~8.0.8
@@ -5053,6 +5054,17 @@ __metadata:
   peerDependencies:
     expo: "*"
   checksum: 564f4930a4d688571ed61bfc84aa0a38adf550fd01d4d40cf76e8cc315e52a8e32b59dcaf6527231765888e25d8bea829f1953b8c50580fefb3ab0e647067a33
+  languageName: node
+  linkType: hard
+
+"expo-image-manipulator@npm:~14.0.7":
+  version: 14.0.7
+  resolution: "expo-image-manipulator@npm:14.0.7"
+  dependencies:
+    expo-image-loader: ~6.0.0
+  peerDependencies:
+    expo: "*"
+  checksum: 136352e5f17f2ba50c3f0ce942ecb126a96daa7cfb76761270e350ee60bed9eb4971034d85be27cd637dfc9094e0a1a266339f01fdfc3f0284e3612ffef4ac7c
   languageName: node
   linkType: hard
 

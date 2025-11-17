@@ -197,6 +197,145 @@ export default function CollectionItemScreen() {
     return 'image/jpeg';
   }, []);
 
+  const processImageForUpload = useCallback(async (asset: ImagePicker.ImagePickerAsset) => {
+    try {
+      // Try to import ImageManipulator dynamically
+      let ImageManipulator: any;
+      try {
+        ImageManipulator = require('expo-image-manipulator');
+      } catch (e) {
+        console.warn('ImageManipulator not available, using original image');
+        return {
+          uri: asset.uri,
+          width: asset.width || 0,
+          height: asset.height || 0,
+          mimeType: guessMimeType(asset),
+          format: asset.uri.endsWith('.png') ? 'png' :
+            asset.uri.endsWith('.webp') ? 'webp' : 'jpg',
+        };
+      }
+
+      const MAX_DIMENSION = 4000;
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+
+      let width = asset.width || 0;
+      let height = asset.height || 0;
+      let processedUri = asset.uri;
+      let processedFormat = ImageManipulator.SaveFormat?.JPEG || 'jpeg';
+      let mimeType = guessMimeType(asset);
+
+      // Determine format from mime type
+      if (mimeType === 'image/png') {
+        processedFormat = ImageManipulator.SaveFormat?.PNG || 'png';
+      } else if (mimeType === 'image/webp') {
+        processedFormat = ImageManipulator.SaveFormat?.WEBP || 'webp';
+      } else {
+        processedFormat = ImageManipulator.SaveFormat?.JPEG || 'jpeg';
+        mimeType = 'image/jpeg';
+      }
+
+      // Check if image needs resizing (exceeds 4000x4000)
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        console.log(`Image dimensions (${width}x${height}) exceed ${MAX_DIMENSION}, resizing...`);
+
+        // Calculate new dimensions maintaining aspect ratio
+        let newWidth = width;
+        let newHeight = height;
+
+        if (width > height) {
+          if (width > MAX_DIMENSION) {
+            newWidth = MAX_DIMENSION;
+            newHeight = Math.round((height * MAX_DIMENSION) / width);
+          }
+        } else {
+          if (height > MAX_DIMENSION) {
+            newHeight = MAX_DIMENSION;
+            newWidth = Math.round((width * MAX_DIMENSION) / height);
+          }
+        }
+
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [{ resize: { width: newWidth, height: newHeight } }],
+          {
+            compress: 0.9,
+            format: processedFormat,
+          }
+        );
+
+        processedUri = manipulatedImage.uri;
+        width = manipulatedImage.width;
+        height = manipulatedImage.height;
+        console.log(`Image resized to ${width}x${height}`);
+      } else {
+        // Even if dimensions are OK, compress to reduce file size
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [],
+          {
+            compress: 0.85,
+            format: processedFormat,
+          }
+        );
+
+        processedUri = manipulatedImage.uri;
+      }
+
+      // Get file info to check size
+      const fileInfo = await fetch(processedUri).then(res => res.blob());
+      const fileSize = fileInfo.size;
+
+      // If still too large, compress more aggressively
+      let currentFileSize = fileSize;
+      if (currentFileSize > MAX_FILE_SIZE) {
+        console.log(`File size (${(currentFileSize / 1024 / 1024).toFixed(2)}MB) exceeds 20MB, compressing more...`);
+        let compressQuality = 0.7;
+
+        while (currentFileSize > MAX_FILE_SIZE && compressQuality > 0.3) {
+          const compressedImage = await ImageManipulator.manipulateAsync(
+            processedUri,
+            [],
+            {
+              compress: compressQuality,
+              format: processedFormat,
+            }
+          );
+
+          const newFileInfo = await fetch(compressedImage.uri).then(res => res.blob());
+          const newFileSize = newFileInfo.size;
+          if (newFileSize < currentFileSize) {
+            processedUri = compressedImage.uri;
+            currentFileSize = newFileSize;
+            compressQuality -= 0.1;
+          } else {
+            break;
+          }
+        }
+        console.log(`Final file size: ${(currentFileSize / 1024 / 1024).toFixed(2)}MB`);
+      }
+
+      return {
+        uri: processedUri,
+        width,
+        height,
+        mimeType,
+        format: processedFormat === (ImageManipulator.SaveFormat?.PNG || 'png') ? 'png' :
+          processedFormat === (ImageManipulator.SaveFormat?.WEBP || 'webp') ? 'webp' : 'jpg',
+      };
+    } catch (error) {
+      console.error('Image processing error:', error);
+      // Fallback to original asset if processing fails
+      return {
+        uri: asset.uri,
+        width: asset.width || 0,
+        height: asset.height || 0,
+        mimeType: guessMimeType(asset),
+        format: asset.uri.endsWith('.png') ? 'png' :
+          asset.uri.endsWith('.webp') ? 'webp' : 'jpg',
+      };
+    }
+  }, [guessMimeType]);
+
   const clearPolling = useCallback(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
@@ -443,11 +582,25 @@ export default function CollectionItemScreen() {
         setVideoMessage(null);
         setVideoTaskInfo(null);
 
+        // Process image before upload (resize, compress, format)
+        console.log('Processing image for upload...');
+        const processedImage = await processImageForUpload(asset);
+        console.log('Image processed:', {
+          width: processedImage.width,
+          height: processedImage.height,
+          format: processedImage.format,
+          mimeType: processedImage.mimeType,
+        });
+
         const formData = new FormData();
+        const fileName = asset.fileName
+          ? asset.fileName.replace(/\.[^/.]+$/, `.${processedImage.format}`)
+          : `upload-${Date.now()}.${processedImage.format}`;
+
         formData.append('image', {
-          uri: asset.uri,
-          name: asset.fileName ?? `upload-${Date.now()}.jpg`,
-          type: guessMimeType(asset),
+          uri: processedImage.uri,
+          name: fileName,
+          type: processedImage.mimeType,
         } as any);
 
         const traceId = generateTraceId();
@@ -528,7 +681,7 @@ export default function CollectionItemScreen() {
         setModalVisible(false);
       }
     },
-    [guessMimeType, triggerVideoGeneration]
+    [guessMimeType, processImageForUpload, triggerVideoGeneration]
   );
 
   const handlePickFromLibrary = useCallback(async () => {
