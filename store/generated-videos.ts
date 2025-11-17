@@ -16,6 +16,7 @@ export type GeneratedVideo = {
   size?: number;
   templateId?: number;
   thumbnail?: string;
+  status?: 'processing' | 'ready' | 'failed';
 };
 
 let videos: GeneratedVideo[] = [];
@@ -67,6 +68,17 @@ function getVideoById(id: number) {
   return videos.find((video) => video.id === id);
 }
 
+function updateVideoStatus(id: number, status: 'processing' | 'ready' | 'failed', url?: string) {
+  const video = videos.find((v) => v.id === id);
+  if (video) {
+    video.status = status;
+    if (url) {
+      video.url = url;
+    }
+    setVideos([...videos]);
+  }
+}
+
 async function hydrateVideos() {
   if (hasHydrated) return;
   hasHydrated = true;
@@ -97,5 +109,6 @@ export function useGeneratedVideos() {
     removeVideo,
     clearVideos,
     getVideoById,
+    updateVideoStatus,
   };
 }

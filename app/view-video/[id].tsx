@@ -4,10 +4,11 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { VideoView, useVideoPlayer, type VideoSource } from 'expo-video';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   Pressable,
   Share,
@@ -24,7 +25,7 @@ const DOWNLOADS_KEY = 'downloaded-video-local-uris';
 export default function ViewVideoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; url?: string; prompt?: string }>();
-  const { getVideoById } = useGeneratedVideos();
+  const { videos } = useGeneratedVideos();
 
   const videoId = useMemo(() => {
     if (typeof params.id === 'string') {
@@ -36,80 +37,78 @@ export default function ViewVideoScreen() {
     return undefined;
   }, [params.id]);
 
-  const storedVideo = videoId !== undefined ? getVideoById(videoId) : undefined;
-  const videoUrl = storedVideo?.url || (typeof params.url === 'string' && params.url.length > 0 ? params.url : undefined);
-  const prompt = storedVideo?.prompt || (typeof params.prompt === 'string' ? params.prompt : undefined);
+  // Make storedVideo reactive to store changes
+  const storedVideo = useMemo(() => {
+    if (videoId === undefined) return undefined;
+    return videos.find((video) => video.id === videoId);
+  }, [videoId, videos]);
+
+  // Prioritize stored video URL, but fallback to params.url if available
+  const videoUrl = useMemo(() => {
+    const storedUrl = storedVideo?.url;
+    const paramUrl = typeof params.url === 'string' && params.url.trim().length > 0 ? params.url.trim() : undefined;
+    return storedUrl || paramUrl;
+  }, [storedVideo?.url, params.url]);
+
+  const prompt = storedVideo?.prompt || (typeof params.prompt === 'string' && params.prompt.trim().length > 0 ? params.prompt.trim() : undefined);
 
   const [isOptionsVisible, setOptionsVisible] = useState(false);
   const [isDownloading, setDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [localUri, setLocalUri] = useState<string | null>(null);
-  const [isVideoLoading, setIsVideoLoading] = useState(!!videoUrl);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   const initialSource = useMemo<VideoSource>(() => ({ uri: videoUrl ?? 'data:,' }), [videoUrl]);
   const player = useVideoPlayer(initialSource, (playerInstance) => {
-    console.log('Video player ready',initialSource,videoUrl);
     playerInstance.loop = true;
+    playerInstance.muted = false; // Enable sound
     try {
       playerInstance.play();
     } catch {
-      console.log('Autoplay failed');
       // ignore autoplay issues
     }
   });
 
+  // Update video source when videoUrl changes
   useEffect(() => {
-            console.log('Video sok',videoUrl);
-
-    if (!videoUrl) {
-      setIsVideoLoading(false);
-      return;
+    if (videoUrl) {
+      setVideoProgress(0);
+      progressAnim.setValue(0);
+      player.replaceAsync({ uri: videoUrl }).catch((error) => {
+        console.warn('Failed to load video', error);
+      });
     }
-    setIsVideoLoading(true);
-    let isMounted = true;
-    let checkReadyInterval: ReturnType<typeof setInterval> | null = null;
-    let fallbackTimeout: ReturnType<typeof setTimeout> | null = null;
-    const load = async () => {
-      try {
-        await player.replaceAsync({ uri: videoUrl });
-        console.log('Video source set, starting playback',videoUrl);
-        if (isMounted) {
-          player.play();
-          // Wait for video to be ready - check duration or wait a bit for buffering
-          checkReadyInterval = setInterval(() => {
-            if (!isMounted) {
-              if (checkReadyInterval) clearInterval(checkReadyInterval);
-              return;
-            }
-            // Video is ready when duration is available and > 0
-            if (player.duration > 0) {
-              if (checkReadyInterval) clearInterval(checkReadyInterval);
-              if (fallbackTimeout) clearTimeout(fallbackTimeout);
-              setIsVideoLoading(false);
-            }
-          }, 100);
-          // Fallback timeout in case duration never becomes available
-          fallbackTimeout = setTimeout(() => {
-            if (checkReadyInterval) clearInterval(checkReadyInterval);
-            if (isMounted) {
-              setIsVideoLoading(false);
-            }
-          }, 5000);
-        }
-      } catch (error) {
-        console.warn('Failed to start video playback', error);
-        if (isMounted) {
-          setIsVideoLoading(false);
-        }
+  }, [videoUrl, player, progressAnim]);
+
+  // Track video progress
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    const updateProgress = () => {
+      const currentTime = player.currentTime;
+      const duration = player.duration;
+
+      if (duration > 0) {
+        setVideoDuration(duration);
+        const progress = Math.min(Math.max(currentTime / duration, 0), 1);
+        setVideoProgress(progress);
+        // Animate progress bar smoothly
+        Animated.timing(progressAnim, {
+          toValue: progress,
+          duration: 100,
+          useNativeDriver: false,
+        }).start();
       }
     };
-    load();
+
+    const interval = setInterval(updateProgress, 100); // Update every 100ms
+
     return () => {
-      isMounted = false;
-      if (checkReadyInterval) clearInterval(checkReadyInterval);
-      if (fallbackTimeout) clearTimeout(fallbackTimeout);
+      clearInterval(interval);
     };
-  }, [player, videoUrl,params.url]);
+  }, [videoUrl, player, progressAnim]);
 
   useEffect(() => {
     if (videoId === undefined) return;
@@ -131,7 +130,7 @@ export default function ViewVideoScreen() {
   }, [videoId]);
 
   const handleClose = useCallback(() => {
-    router.replace('/(tabs)');
+    router.back();
   }, [router]);
 
   const handleShare = useCallback(async () => {
@@ -188,44 +187,60 @@ export default function ViewVideoScreen() {
 
   if (!videoUrl) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.safeAreaDark]}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable style={styles.iconButton} onPress={handleClose}>
+            <Ionicons name="close" size={22} color="#FFFFFF" />
+          </Pressable>
+        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Video unavailable</Text>
           <Text style={styles.errorSubtitle}>
             We couldn&apos;t load this video. Please try generating again.
           </Text>
-          <Pressable style={styles.closeButton} onPress={handleClose}>
-            <Ionicons name="close" size={22} color="#FFFFFF" />
-          </Pressable>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, styles.safeAreaDark]}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <Pressable style={styles.iconButton} onPress={handleClose}>
+          <Ionicons name="close" size={22} color="#FFFFFF" />
+        </Pressable>
+        <Pressable style={styles.iconButton} onPress={() => setOptionsVisible(true)}>
+          <Ionicons name="ellipsis-horizontal" size={22} color="#FFFFFF" />
+        </Pressable>
+      </View>
+
+      <View style={styles.mediaContainer}>
         <VideoView
           player={player}
-          style={styles.video}
-          contentFit="contain"
-          nativeControls
+          style={styles.media}
+          contentFit="cover"
+          nativeControls={false}
         />
+      </View>
 
-        <View style={styles.topBar}>
-          <Pressable style={styles.iconButton} onPress={handleClose}>
-            <Ionicons name="close" size={22} color="#FFFFFF" />
-          </Pressable>
-          <Pressable style={styles.iconButton} onPress={() => setOptionsVisible(true)}>
-            <Ionicons name="ellipsis-horizontal" size={22} color="#FFFFFF" />
-          </Pressable>
+      <View style={styles.bottomSheet}>
+        <View style={styles.promptHeader}>
+          <Text style={styles.promptTitle}>{prompt ?? 'Generated video'}</Text>
         </View>
-
-        <View style={styles.promptWrapper}>
-          <Text style={styles.promptLabel}>Prompt</Text>
-          <Text style={styles.promptText} numberOfLines={2}>
-            {prompt ?? 'Generated video'}
-          </Text>
+        <View style={styles.progressTrack}>
+          <Animated.View
+            style={[
+              styles.progressIndicator,
+              {
+                width: videoDuration > 0
+                  ? progressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0%', '100%'],
+                  })
+                  : '25%',
+              },
+            ]}
+          />
         </View>
       </View>
 
@@ -235,7 +250,7 @@ export default function ViewVideoScreen() {
         visible={isOptionsVisible}
         onRequestClose={() => setOptionsVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setOptionsVisible(false)}>
-          <Pressable style={styles.bottomSheet} onPress={(event) => event.stopPropagation()}>
+          <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Video actions</Text>
             <Pressable style={styles.sheetAction} onPress={handleShare}>
@@ -249,14 +264,6 @@ export default function ViewVideoScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-      {isVideoLoading && (
-        <View style={styles.loadingOverlay} pointerEvents="auto">
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.loadingText}>Loading video...</Text>
-          </View>
-        </View>
-      )}
       {isDownloading && (
         <View style={styles.loadingOverlay} pointerEvents="auto">
           <View style={styles.loadingContent}>
@@ -272,65 +279,65 @@ export default function ViewVideoScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: '#08070B',
   },
-  safeAreaDark: {
-    backgroundColor: '#09070F',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#09070F',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  video: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#000',
-  },
-  topBar: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    right: 16,
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 12,
   },
   iconButton: {
     height: 40,
     width: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  promptWrapper: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 28,
-    borderRadius: 20,
-    backgroundColor: 'rgba(10, 8, 16, 0.75)',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+  mediaContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
   },
-  promptLabel: {
-    color: '#B4B5C9',
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  media: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000',
   },
-  promptText: {
-    marginTop: 6,
+  bottomSheet: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    paddingTop: 24,
+    backgroundColor: 'rgba(10, 8, 16, 0.9)',
+  },
+  promptHeader: {
+    marginBottom: 16,
+  },
+  promptTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '700',
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  progressIndicator: {
+    height: '100%',
+    width: '25%',
+    borderRadius: 2,
+    backgroundColor: '#F3E8D5',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(6, 4, 10, 0.7)',
     justifyContent: 'flex-end',
   },
-  bottomSheet: {
+  modalSheet: {
     marginHorizontal: 12,
     marginBottom: 20,
     borderRadius: 26,
@@ -382,15 +389,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  closeButton: {
-    marginTop: 16,
-    height: 40,
-    width: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

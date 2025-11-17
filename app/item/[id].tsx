@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { VideoView, useVideoPlayer, type VideoSource } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -153,6 +153,21 @@ export default function CollectionItemScreen() {
     };
   }, [videoUrl, videoPlayer, progressAnim]);
 
+  // Pause video when screen loses focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup: pause and mute video when screen loses focus
+        try {
+          videoPlayer.pause();
+          videoPlayer.muted = true;
+        } catch (error) {
+          // Ignore errors if player is already destroyed
+        }
+      };
+    }, [videoPlayer])
+  );
+
   const ensureLibraryPermission = useCallback(async () => {
     const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
@@ -189,27 +204,38 @@ export default function CollectionItemScreen() {
     }
   }, []);
 
-  const navigateToVideoViewer = useCallback(
-    async (videoId: number, fallbackUrl?: string, promptText?: string) => {
+  const handleBack = useCallback(() => {
+    // Stop video playback before navigating back
+    try {
+      videoPlayer.pause();
+      videoPlayer.muted = true;
+    } catch (error) {
+      console.warn('Failed to stop video playback', error);
+    }
+    router.back();
+  }, [router, videoPlayer]);
+
+  const navigateToMyCreations = useCallback(
+    (videoId: number) => {
       if (hasNavigatedRef.current) return;
       hasNavigatedRef.current = true;
       clearPolling();
       setIsGeneratingVideo(false);
       setVideoStatus('success');
 
-      // Small delay to ensure store is updated before navigation
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Stop video playback before navigating
+      try {
+        videoPlayer.pause();
+        videoPlayer.muted = true;
+      } catch (error) {
+        console.warn('Failed to stop video playback', error);
+      }
 
-      router.push({
-        pathname: '/view-video/[id]',
-        params: {
-          id: String(videoId),
-          url: fallbackUrl ?? '',
-          prompt: promptText ?? '',
-        },
-      });
+      console.log('Navigating to My Creations with video ID:', videoId);
+      // Navigate to my-creations tab
+      router.push('/(tabs)/my-creations');
     },
-    [router, clearPolling]
+    [router, clearPolling, videoPlayer]
   );
 
   const startPollingVideoResult = useCallback(
@@ -266,8 +292,9 @@ export default function CollectionItemScreen() {
               size: resp.size,
               templateId,
               thumbnail,
+              status: 'processing', // Mark as processing initially
             });
-            navigateToVideoViewer(finalVideoId, videoSourceUrl, prompt);
+            navigateToMyCreations(finalVideoId);
 
 
           } else if (status === 3 || status === 'failed' || status === 4) {
@@ -289,7 +316,7 @@ export default function CollectionItemScreen() {
         }
       }, VIDEO_POLL_INTERVAL);
     },
-    [addGeneratedVideo, clearPolling, navigateToVideoViewer, prompt, templateId]
+    [addGeneratedVideo, clearPolling, navigateToMyCreations, prompt, templateId]
   );
 
   const triggerVideoGeneration = useCallback(
@@ -322,6 +349,7 @@ export default function CollectionItemScreen() {
           quality: '540p',
           template_id: templateId,
           seed: 0,
+          "sound_effect_switch": true,
         };
 
         const response = await fetch(`${API_BASE_URL}/openapi/v2/video/img/generate`, {
@@ -548,7 +576,7 @@ export default function CollectionItemScreen() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" translucent />
       <View style={styles.header}>
-        <Pressable style={styles.iconButton} onPress={() => router.back()}>
+        <Pressable style={styles.iconButton} onPress={handleBack}>
           <Ionicons name="close" size={22} color="#FFFFFF" />
         </Pressable>
 

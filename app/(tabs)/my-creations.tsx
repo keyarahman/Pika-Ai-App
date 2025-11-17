@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useGeneratedVideos } from '@/store/generated-videos';
@@ -18,12 +18,40 @@ function formatTimestamp(timestamp?: string) {
   return date.toLocaleString();
 }
 
+const checkVideoUrlReady = async (url: string): Promise<boolean> => {
+  if (!url || url.trim().length === 0) {
+    return false;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return true;
+    }
+  } catch (error) {
+    // URL not ready yet
+  }
+
+  return false;
+};
+
 export default function MyCreationsScreen() {
-  const { videos, removeVideo } = useGeneratedVideos();
+  const { videos, removeVideo, updateVideoStatus } = useGeneratedVideos();
   const hasCreations = videos.length > 0;
   const router = useRouter();
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videosRef = useRef(videos);
 
   const handleOpenMenu = (videoId: number) => {
     setSelectedVideoId(videoId);
@@ -59,6 +87,49 @@ export default function MyCreationsScreen() {
     );
   };
 
+  // Keep videos ref up to date
+  useEffect(() => {
+    videosRef.current = videos;
+  }, [videos]);
+
+  // Poll for processing videos every 2 seconds
+  useEffect(() => {
+    const processingVideos = videos.filter((v) => v.status === 'processing' && v.url);
+    
+    if (processingVideos.length === 0) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Start polling if not already started
+    if (!pollingIntervalRef.current) {
+      pollingIntervalRef.current = setInterval(async () => {
+        // Get fresh videos from ref inside the interval
+        const currentProcessingVideos = videosRef.current.filter((v) => v.status === 'processing' && v.url);
+        
+        for (const video of currentProcessingVideos) {
+          if (video.url) {
+            const isReady = await checkVideoUrlReady(video.url);
+            if (isReady) {
+              console.log(`Video ${video.id} is ready!`);
+              updateVideoStatus(video.id, 'ready', video.url);
+            }
+          }
+        }
+      }, 2000); // Check every 2 seconds
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [videos, updateVideoStatus]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -78,12 +149,20 @@ export default function MyCreationsScreen() {
               {videos.map((video) => {
                 const thumbnail = video.thumbnail ?? video.url ?? EMPTY_BUCKET_IMAGE;
                 const formattedDate = formatTimestamp(video.create_time ?? video.modify_time);
-                const canOpen = Boolean(video.url);
+                const isProcessing = video.status === 'processing';
+                const isReady = video.status === 'ready' || (!video.status && video.url);
+                const canOpen = isReady && Boolean(video.url);
 
                 return (
                   <View key={video.id} style={styles.card}>
                     <Image source={{ uri: thumbnail }} style={styles.thumbnail} contentFit="cover" />
                     <View style={styles.cardOverlay} />
+                    {isProcessing && (
+                      <View style={styles.processingOverlay}>
+                        <ActivityIndicator size="large" color="#FFFFFF" />
+                        <Text style={styles.processingText}>Processing...</Text>
+                      </View>
+                    )}
                     <Pressable
                       style={styles.menuButton}
                       onPress={() => handleOpenMenu(video.id)}>
@@ -104,7 +183,6 @@ export default function MyCreationsScreen() {
                             pathname: '/view-video/[id]',
                             params: {
                               id: String(video.id),
-                              url: video.url ?? '',
                               prompt: video.prompt ?? '',
                             },
                           });
@@ -231,6 +309,19 @@ const styles = StyleSheet.create({
   cardOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10, 7, 16, 0.35)',
+  },
+  processingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    zIndex: 5,
+  },
+  processingText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   menuButton: {
     position: 'absolute',
