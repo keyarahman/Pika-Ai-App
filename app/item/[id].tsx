@@ -76,6 +76,7 @@ export default function CollectionItemScreen() {
     };
   }, [params.image, params.prompt, params.templateId, params.title, params.videUrl]);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [uploadedMessage, setUploadedMessage] = useState<string | null>(null);
   const [uploadedAssetInfo, setUploadedAssetInfo] = useState<{ imgId: number; imgUrl?: string } | null>(
@@ -370,12 +371,19 @@ export default function CollectionItemScreen() {
         console.warn('Failed to stop video playback', error);
       }
 
-      console.log('Navigating to My Creations with video ID:', videoId);
-      // Navigate to my-creations tab
-      router.push('/(tabs)/my-creations');
+      console.log('Showing success modal for video ID:', videoId);
+      // Show success modal instead of navigating directly
+      setShowSuccessModal(true);
     },
-    [router, clearPolling, videoPlayer]
+    [clearPolling, videoPlayer]
   );
+
+  // Handle success modal OK button
+  const handleSuccessModalOK = useCallback(() => {
+    setShowSuccessModal(false);
+    // Navigate to My Creations tab
+    router.push('/(tabs)/my-creations');
+  }, [router]);
 
   const startPollingVideoResult = useCallback(
     (videoId: number) => {
@@ -835,6 +843,43 @@ export default function CollectionItemScreen() {
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
       )}
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleSuccessModalOK}>
+        <View style={styles.successModalOverlay}>
+          <View style={styles.successModal}>
+            <View style={styles.successIconContainer}>
+              <LinearGradient
+                colors={['#EA6198', '#7135FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.successIconGradient}>
+                <Ionicons name="checkmark" size={48} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.successTitle}>Hurrah! 🎉</Text>
+            <Text style={styles.successMessage}>
+              Video has been generated! Just wait a few moments for it to be ready.
+            </Text>
+            <Pressable
+              style={styles.successButton}
+              onPress={handleSuccessModalOK}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
+              <LinearGradient
+                colors={['#EA6198', '#7135FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Text style={styles.successButtonText}>OK</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1033,6 +1078,67 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(8, 7, 12, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  successModal: {
+    backgroundColor: '#1A1824',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: '#252233',
+  },
+  successIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successIconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    color: '#9BA0BC',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  successButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
 

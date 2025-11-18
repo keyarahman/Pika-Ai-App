@@ -11,6 +11,7 @@ type ImageToVideoSectionProps = {
     onPromptChange: (prompt: string) => void;
     onPickImage: () => Promise<ImagePicker.ImagePickerAsset | null>;
     onTakePhoto?: () => Promise<ImagePicker.ImagePickerAsset | null>;
+    onRemoveImage?: () => void;
 };
 
 export function ImageToVideoSection({
@@ -20,6 +21,7 @@ export function ImageToVideoSection({
     onPromptChange,
     onPickImage,
     onTakePhoto,
+    onRemoveImage,
 }: ImageToVideoSectionProps) {
     const handleUploadImage = useCallback(async () => {
         const asset = await onPickImage();
@@ -43,14 +45,13 @@ export function ImageToVideoSection({
                 {selectedAsset ? (
                     <>
                         <Image source={{ uri: selectedAsset.uri }} style={styles.uploadPreview} contentFit="cover" />
-                        <View style={styles.uploadOverlay}>
+                        {onRemoveImage && (
                             <Pressable
-                                style={styles.changeImageButton}
-                                onPress={handleUploadImage}>
-                                <Ionicons name="refresh" size={18} color="#FFFFFF" />
-                                <Text style={styles.changeImageText}>Change Image</Text>
+                                style={styles.removeImageButton}
+                                onPress={onRemoveImage}>
+                                <Ionicons name="close-circle" size={28} color="#FFFFFF" />
                             </Pressable>
-                        </View>
+                        )}
                     </>
                 ) : (
                     <>
@@ -211,29 +212,17 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
     },
-    uploadOverlay: {
+    removeImageButton: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        top: 12,
+        right: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    changeImageButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 20,
-        backgroundColor: 'rgba(113, 53, 255, 0.9)',
-    },
-    changeImageText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
+        zIndex: 10,
     },
     promptContainer: {
         marginBottom: 16,

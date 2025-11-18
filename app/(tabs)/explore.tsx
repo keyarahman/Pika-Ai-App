@@ -1,12 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FramesSection } from '@/components/frames-section';
 import { ImageToVideoSection } from '@/components/image-to-video-section';
 import { TextToVideoSection } from '@/components/text-to-video-section';
+import { useGeneratedVideos } from '@/store/generated-videos';
+import { pickImageFromLibrary, takePhotoWithCamera } from '@/utils/image-picker';
+import { uploadImage } from '@/utils/image-upload';
+import { generateVideoFromImage, pollVideoResult, VideoResult } from '@/utils/video-generation';
 
 const MODE_OPTIONS = [
   { id: 'image-to-video', label: 'Image to Video' },
@@ -18,6 +24,8 @@ type ModeOptionId = (typeof MODE_OPTIONS)[number]['id'];
 type AspectRatioId = '21:9' | '9:16' | '16:9' | '4:3' | '1:1';
 
 export default function ExploreScreen() {
+  const router = useRouter();
+  const { addVideo } = useGeneratedVideos();
   const [activeMode, setActiveMode] = useState<ModeOptionId>('image-to-video');
   const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [startFrame, setStartFrame] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -27,59 +35,153 @@ export default function ExploreScreen() {
   const [framesPrompt, setFramesPrompt] = useState('');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatioId>('9:16');
 
-  const ensureLibraryPermission = useCallback(async () => {
-    const { granted, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) {
-      if (canAskAgain) {
-        Alert.alert('Permission needed', 'Please allow photo library access to pick an image.');
-      }
-      return false;
-    }
-    return true;
-  }, []);
-
-  const ensureCameraPermission = useCallback(async () => {
-    const { granted, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) {
-      if (canAskAgain) {
-        Alert.alert('Permission needed', 'Please allow camera access to take a photo.');
-      }
-      return false;
-    }
-    return true;
-  }, []);
+  // Loading states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const pollingStopRef = useRef<(() => void) | null>(null);
 
   const handlePickImage = useCallback(async () => {
-    const hasPermission = await ensureLibraryPermission();
-    if (!hasPermission) return null;
-
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-      allowsEditing: false,
-    });
-
-    if (!pickerResult.canceled && pickerResult.assets[0]) {
-      return pickerResult.assets[0];
-    }
-    return null;
-  }, [ensureLibraryPermission]);
+    return await pickImageFromLibrary();
+  }, []);
 
   const handleTakePhoto = useCallback(async () => {
-    const hasPermission = await ensureCameraPermission();
-    if (!hasPermission) return null;
+    return await takePhotoWithCamera();
+  }, []);
 
-    const cameraResult = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-      allowsEditing: false,
-    });
+  const handleRemoveImage = useCallback(() => {
+    setSelectedAsset(null);
+  }, []);
 
-    if (!cameraResult.canceled && cameraResult.assets[0]) {
-      return cameraResult.assets[0];
+  const handleGenerateImageToVideo = useCallback(async () => {
+    // Validation
+    if (!selectedAsset) {
+      Alert.alert('Image required', 'Please upload an image first.');
+      return;
     }
-    return null;
-  }, [ensureCameraPermission]);
+    if (!imageToVideoPrompt.trim()) {
+      Alert.alert('Prompt required', 'Please enter a prompt to generate the video.');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setUploadStatus('uploading');
+
+      // Upload image
+      console.log('Uploading image...');
+      const uploadResult = await uploadImage(selectedAsset);
+      console.log('Image uploaded successfully:', uploadResult);
+
+      setUploadStatus('success');
+
+      // Generate video
+      console.log('Generating video...');
+      const videoResult = await generateVideoFromImage({
+        img_id: uploadResult.img_id,
+        prompt: imageToVideoPrompt.trim(),
+        quality: '1080p',
+      });
+
+      console.log('Video generation started:', videoResult);
+
+      // Start polling for video result
+      pollingStopRef.current = pollVideoResult(
+        videoResult.video_id,
+        (result: VideoResult) => {
+          console.log('Video status update:', result);
+        },
+        async (result: VideoResult) => {
+          console.log('Video ready:', result);
+          setIsGenerating(false);
+
+          // Add video to store
+          const videoUrl = result.url || result.video_url;
+          if (videoUrl && result.id) {
+            await addVideo({
+              id: result.id,
+              url: videoUrl,
+              prompt: imageToVideoPrompt.trim(),
+              create_time: result.create_time,
+              modify_time: result.modify_time,
+              outputHeight: result.outputHeight,
+              outputWidth: result.outputWidth,
+              size: result.size,
+              thumbnail: result.cover_url || uploadResult.img_url,
+              status: 'processing',
+            });
+          }
+
+          // Show success modal
+          setShowSuccessModal(true);
+        }
+      );
+    } catch (error) {
+      console.error('Generate video error:', error);
+      setIsGenerating(false);
+      setUploadStatus('error');
+      const message = error instanceof Error ? error.message : 'Failed to generate video';
+      Alert.alert('Generation failed', message);
+    }
+  }, [selectedAsset, imageToVideoPrompt, addVideo, router]);
+
+  const handleGenerateTextToVideo = useCallback(async () => {
+    // Validation
+    if (!textToVideoPrompt.trim()) {
+      Alert.alert('Prompt required', 'Please enter a prompt to generate the video.');
+      return;
+    }
+
+    Alert.alert('Coming soon', 'Text to Video generation is coming soon!');
+  }, [textToVideoPrompt]);
+
+  const handleGenerateFrames = useCallback(async () => {
+    // Validation
+    if (!startFrame || !endFrame) {
+      Alert.alert('Frames required', 'Please upload both start and end frames.');
+      return;
+    }
+    if (!framesPrompt.trim()) {
+      Alert.alert('Prompt required', 'Please enter a prompt to generate the video.');
+      return;
+    }
+
+    Alert.alert('Coming soon', 'Frames to Video generation is coming soon!');
+  }, [startFrame, endFrame, framesPrompt]);
+
+  const handleGenerateVideo = useCallback(() => {
+    switch (activeMode) {
+      case 'image-to-video':
+        handleGenerateImageToVideo();
+        break;
+      case 'text-to-video':
+        handleGenerateTextToVideo();
+        break;
+      case 'frames':
+        handleGenerateFrames();
+        break;
+    }
+  }, [activeMode, handleGenerateImageToVideo, handleGenerateTextToVideo, handleGenerateFrames]);
+
+  // Handle success modal OK button
+  const handleSuccessModalOK = useCallback(() => {
+    setShowSuccessModal(false);
+    // Clear prompt and image
+    setImageToVideoPrompt('');
+    setSelectedAsset(null);
+    // Navigate to My Creations tab
+    router.push('/(tabs)/my-creations');
+  }, [router]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingStopRef.current) {
+        pollingStopRef.current();
+        pollingStopRef.current = null;
+      }
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeMode) {
@@ -92,6 +194,7 @@ export default function ExploreScreen() {
             onPromptChange={setImageToVideoPrompt}
             onPickImage={handlePickImage}
             onTakePhoto={handleTakePhoto}
+            onRemoveImage={handleRemoveImage}
           />
         );
       case 'text-to-video':
@@ -158,7 +261,9 @@ export default function ExploreScreen() {
 
 
         <Pressable
-          style={styles.generateButton}
+          style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+          onPress={handleGenerateVideo}
+          disabled={isGenerating}
           android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
           <LinearGradient
             colors={['#EA6198', '#7135FF']}
@@ -166,11 +271,58 @@ export default function ExploreScreen() {
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
           />
-          <Text style={styles.generateText}>Generate Video</Text>
+          {isGenerating ? (
+            <View style={styles.generateButtonContent}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.generateText}>
+                Generating...
+                {/* {uploadStatus === 'uploading' ? 'Uploading...' : 'Generating...'} */}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.generateText}>Generate Video</Text>
+          )}
         </Pressable>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleSuccessModalOK}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModal}>
+            <View style={styles.successIconContainer}>
+              <LinearGradient
+                colors={['#EA6198', '#7135FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.successIconGradient}>
+                <Ionicons name="checkmark" size={48} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.successTitle}>Hurrah! 🎉</Text>
+            <Text style={styles.successMessage}>
+              Video has been generated! Just wait a few moments for it to be ready.
+            </Text>
+            <Pressable
+              style={styles.successButton}
+              onPress={handleSuccessModalOK}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
+              <LinearGradient
+                colors={['#EA6198', '#7135FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Text style={styles.successButtonText}>OK</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -276,6 +428,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  generateButtonDisabled: {
+    opacity: 0.7,
+  },
+  generateButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   generateText: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -284,5 +444,66 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  successModal: {
+    backgroundColor: '#1A1824',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderColor: '#252233',
+  },
+  successIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successIconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    color: '#9BA0BC',
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  successButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
