@@ -4317,6 +4317,7 @@ __metadata:
     eslint-config-expo: "npm:~10.0.0"
     expo: "npm:~54.0.23"
     expo-av: "npm:~16.0.7"
+    expo-blur: "npm:~15.0.7"
     expo-constants: "npm:~18.0.10"
     expo-file-system: "npm:~19.0.17"
     expo-font: "npm:~14.0.9"
@@ -5000,6 +5001,17 @@ __metadata:
     react-native-web:
       optional: true
   checksum: 10/d8e78d2e57dbd849a443c3c2def6a2c5482434dce6263a63e2d0c7260a8a2c5d367bbbe1a0cbb5de61d23b103ea71427e7f7557fc327e5004892813a8b822fdb
+  languageName: node
+  linkType: hard
+
+"expo-blur@npm:~15.0.7":
+  version: 15.0.7
+  resolution: "expo-blur@npm:15.0.7"
+  peerDependencies:
+    expo: "*"
+    react: "*"
+    react-native: "*"
+  checksum: 10/1f4805ecf4e0bb7e2a6d89295dcfb1c2157658d55a43d4ce1a0b3700b9bf969cefd5a2b484b072c8dbe8ef460f8c0855eb5badad3eaec88ea0259a7b051e2cfc
   languageName: node
   linkType: hard
 

@@ -1,171 +1,243 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useMemo, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { Video } from "expo-av";
+import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { PRO_PLANS } from './(tabs)/index';
+import { PRO_PLANS, VIRAL_ITEMS } from "./(tabs)/index";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const BENEFITS = [
+  {
+    icon: "happy-outline",
+    iconColor: "#FFD700",
+    text: "Access All All Efects",
+  },
+  {
+    icon: "image-outline",
+    iconColor: "#4CAF50",
+    text: "Unlimited AI Visual Creations",
+  },
+  {
+    icon: "videocam-outline",
+    iconColor: "#FF5722",
+    text: "Generate Viral Videos with AI",
+  },
+  // { icon: 'flame-outline', iconColor: '#FF1744', text: '1000+ Exclusive Content' },
+  {
+    icon: "close-circle-outline",
+    iconColor: "#F44336",
+    text: "No Ads & Watermarks",
+  },
+];
 
 export default function ProModalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const carouselScrollRef = useRef<ScrollView>(null);
+  const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const [selectedPlan, setSelectedPlan] =
-    useState<(typeof PRO_PLANS)[number]['id']>('yearly');
+    useState<(typeof PRO_PLANS)[number]["id"]>("yearly");
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const plans = useMemo(() => PRO_PLANS, []);
-  const heroUri =
-    'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=1200&q=80';
+
+  // Get first 3 viral items for carousel
+  const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 3), []);
 
   const handleClose = () => {
-    router.replace('/(tabs)');
+    router.replace("/(tabs)");
   };
+
+  const handleCarouselScroll = useCallback((event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    setCarouselIndex(index);
+  }, []);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent />
-      <Image source={{ uri: heroUri }} style={styles.heroImage} />
+
+      {/* Layer 1: Background - Two Flex Parts (Top/Bottom) */}
+      <View style={styles.backgroundLayer}>
+        {/* Top Part: GIF Image with Blur */}
+        <View style={styles.topBackground}>
+          {carouselItems.length > 0 && (
+            <>
+              <Image
+                source={{ uri: carouselItems[0].image }}
+                style={styles.backgroundImage}
+                contentFit="cover"
+              />
+              {/* Strong Gaussian Blur on Background */}
+              <BlurView
+                intensity={100}
+                tint="dark"
+                style={styles.backgroundBlur}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Bottom Part: Black Background */}
+        <View style={styles.bottomBackground} />
+      </View>
+
+      {/* Layer 2: Black-to-transparent Gradient Overlay (Bottom to Top) */}
       <LinearGradient
-        colors={['rgba(8,7,12,0)', 'rgba(8,7,12,0.92)']}
-        style={styles.heroGradient}
+        colors={["transparent", "rgba(4, 4, 4, 0.98)", "transparent"]}
+        locations={[0, 0.5, 1]}
+        style={styles.gradientOverlay}
       />
 
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+      {/* Layer 3: Content Layer */}
+      <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+        {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
           <Pressable style={styles.closeButton} onPress={handleClose}>
-            <Ionicons name="close" size={20} color="#0F0D16" />
-          </Pressable>
-
-          <Pressable hitSlop={10}>
-            <Text style={styles.restoreText}>Restore</Text>
+            <Ionicons name="close" size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
-        <View style={styles.contentWrapper}>
-          <View style={styles.blurCard}>
-            <Image
-              source={{ uri: heroUri }}
-              style={styles.blurCardBackground}
-              blurRadius={40}
-            />
-            <View style={styles.blurCardOverlay} />
-            <ScrollView
-              contentContainerStyle={styles.cardContent}
-              showsVerticalScrollIndicator={false}>
-              <Text style={styles.title}>Get Pika Labs Pro</Text>
-
-              <View style={styles.benefits}>
-                {['Access All AI Effects', 'Unlimited AI Videos', 'Unlimited AI Images', 'Remove Ads'].map(
-                  (benefit) => (
-                    <View style={styles.benefitRow} key={benefit}>
-                      <Ionicons name="checkmark-circle" size={20} color="#EA6198" />
-                      <Text style={styles.benefitText}>{benefit}</Text>
-                    </View>
-                  )
-                )}
+        {/* Benefits List - Top */}
+        <View style={styles.benefitsContainer}>
+          {BENEFITS.map((benefit, index) => (
+            <View key={index} style={styles.benefitRow}>
+              <View style={styles.benefitIconContainer}>
+                <LinearGradient
+                  colors={["#EA6198", "#7135FF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.benefitIconGradient}
+                >
+                  <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                </LinearGradient>
               </View>
+              <Text style={styles.benefitText}>{benefit.text}</Text>
+            </View>
+          ))}
+        </View>
 
-              <View style={styles.planStack}>
-                {plans.map((plan) => {
-                  const isSelected = selectedPlan === plan.id;
-                  const helperText = 'helper' in plan ? plan.helper : undefined;
-                  const badgeLabel = 'badge' in plan ? plan.badge : undefined;
-                  const badge =
-                    badgeLabel &&
-                    (isSelected ? (
+        {/* Plans and Buttons - Bottom */}
+        <View style={styles.content}>
+          {/* Plan Cards */}
+          <View style={styles.plansContainer}>
+            {plans.map((plan) => {
+              const isSelected = selectedPlan === plan.id;
+              const helperText = "helper" in plan ? plan.helper : undefined;
+              const badgeLabel = "badge" in plan ? plan.badge : undefined;
+
+              return (
+                <View key={plan.id} style={styles.planWrapper}>
+                  {badgeLabel && isSelected && (
+                    <View style={styles.bestValueBadge}>
+                      <Text style={styles.bestValueText}>{badgeLabel}</Text>
+                    </View>
+                  )}
+                  <Pressable
+                    style={[
+                      styles.planCard,
+                      isSelected && styles.planCardSelected,
+                    ]}
+                    onPress={() => setSelectedPlan(plan.id)}
+                  >
+                    {isSelected ? (
                       <LinearGradient
-                        colors={['#EA6198', '#5B5BFF']}
+                        colors={["#EA6198", "#7135FF"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
-                        style={styles.planBadge}>
-                        <Text style={styles.planBadgeText}>{badgeLabel}</Text>
+                        style={styles.planCardGradient}
+                      >
+                        <View style={styles.planCardContent}>
+                          <View style={styles.planLeft}>
+                            <View style={styles.radioButtonSelected}>
+                              <View style={styles.radioInner} />
+                            </View>
+                            <View style={styles.planTextContainer}>
+                              <Text style={styles.planLabel}>{plan.label}</Text>
+                              {helperText && (
+                                <Text style={styles.planHelper}>
+                                  {helperText}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                          <Text style={styles.planPrice}>{plan.price}</Text>
+                        </View>
                       </LinearGradient>
                     ) : (
-                      <View style={styles.planBadgeMuted}>
-                        <Text style={styles.planBadgeText}>{badgeLabel}</Text>
-                      </View>
-                    ));
-
-                  const inner = (
-                    <View
-                      style={[
-                        styles.planCardInner,
-                        isSelected ? styles.planCardInnerSelected : styles.planCardInnerDefault,
-                      ]}>
-                      <View style={styles.planRow}>
-                        <View
-                          style={[
-                            styles.radioOuter,
-                            isSelected && styles.radioOuterSelected,
-                          ]}>
-                          {isSelected && <View style={styles.radioInner} />}
-                        </View>
-                        <View style={styles.planCopy}>
-                          <Text style={styles.planLabel}>{plan.label}</Text>
-                          {helperText && plan.id !== 'yearly' && (
-                            <Text style={styles.planHelper}>{helperText}</Text>
-                          )}
+                      <View style={styles.planCardContent}>
+                        <View style={styles.planLeft}>
+                          <View style={styles.radioButton}>
+                            {isSelected && <View style={styles.radioInner} />}
+                          </View>
+                          <View style={styles.planTextContainer}>
+                            <Text style={styles.planLabel}>{plan.label}</Text>
+                            {helperText && (
+                              <Text style={styles.planHelper}>
+                                {helperText}
+                              </Text>
+                            )}
+                          </View>
                         </View>
                         <Text style={styles.planPrice}>{plan.price}</Text>
                       </View>
-                      {plan.id === 'yearly' && (
-                        <View style={styles.yearlyRow}>
-                          {helperText && (
-                            <Text style={styles.planHelper}>{helperText}</Text>
-                          )}
-                          {badge}
-                        </View>
-                      )}
-                    </View>
-                  );
+                    )}
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
 
-                  return (
-                    <Pressable
-                      key={plan.id}
-                      style={styles.planCardPressable}
-                      onPress={() => setSelectedPlan(plan.id)}>
-                      {isSelected ? (
-                        <LinearGradient
-                          colors={['#EA6198', '#5B5BFF']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.planCardGradient}>
-                          {inner}
-                        </LinearGradient>
-                      ) : (
-                        inner
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
+          {/* Billing Info */}
+          {/* <Text style={styles.billingText}>Billed annually. Cancel anytime.</Text> */}
 
-              <Pressable style={styles.primaryButton}>
-                <LinearGradient
-                  colors={['#EA6198', '#5B5BFF']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                />
-                <Text style={styles.primaryButtonText}>Continue</Text>
-              </Pressable>
+          {/* Continue Button */}
+          <Pressable style={styles.continueButton}>
+            <LinearGradient
+              colors={["#EA6198", "#7135FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.continueButtonGradient}
+            />
+            <Text style={styles.continueButtonText}>Subscribe</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.continueArrow}
+            />
+          </Pressable>
 
-              <View style={styles.legalRow}>
-                <Pressable>
-                  <Text style={styles.legalLink}>Terms of Service</Text>
-                </Pressable>
-                <Pressable>
-                  <Text style={styles.legalLink}>Privacy Policy</Text>
-                </Pressable>
-              </View>
-            </ScrollView>
+          {/* Footer Links */}
+          <View style={styles.footerLinks}>
+            <Pressable>
+              <Text style={styles.footerLink}>RESTORE PURCHASES</Text>
+            </Pressable>
+            <Text style={styles.footerSeparator}>•</Text>
+            <Pressable>
+              <Text style={styles.footerLink}>PRIVACY POLICY</Text>
+            </Pressable>
+            <Text style={styles.footerSeparator}>•</Text>
+            <Pressable>
+              <Text style={styles.footerLink}>TERMS OF USE</Text>
+            </Pressable>
           </View>
         </View>
       </SafeAreaView>
@@ -176,197 +248,230 @@ export default function ProModalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#08070B',
+    backgroundColor: "#000",
+  },
+  // Layer 1: Background - Two Flex Parts (Top/Bottom)
+  backgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "column",
+    zIndex: 1,
+  },
+  topBackground: {
+    flex: 1,
+  },
+  bottomBackground: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  backgroundImage: {
+    width: "100%",
+    height: "100%",
+  },
+  backgroundBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  // Layer 2: Black-to-transparent Gradient Overlay (Bottom to Top)
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2,
   },
   safeArea: {
     flex: 1,
-  },
-  heroImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
   },
   header: {
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingBottom: 10,
+    zIndex: 11,
   },
   closeButton: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    backgroundColor: '#C8D2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  restoreText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  contentWrapper: {
+  // Layer 3: Content Layer
+  content: {
     flex: 1,
-    justifyContent: 'flex-end',
     paddingHorizontal: 20,
-    paddingBottom: 16,marginTop:10
+    paddingBottom: 50,
+    zIndex: 12,
+    justifyContent: "flex-end",
   },
-  blurCard: {
-    borderRadius: 40,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(8, 6, 15, 0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    position: 'relative',
-  },
-  blurCardBackground: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  blurCardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(11, 9, 18, 0.7)',
-  },
-  cardContent: {
-    paddingHorizontal: 28,
-    paddingVertical: 34,
-    gap: 26,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  benefits: {
+  benefitsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 150,
+    paddingBottom: 20,
     gap: 12,
+    zIndex: 12,
   },
   benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
+  },
+  benefitIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  benefitIconGradient: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   benefitText: {
-    color: '#F1EEFF',
-    fontSize: 16,
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    flex: 1,
   },
-  planStack: {
-    gap: 18,
+  plansContainer: {
+    flexDirection: "column",
+    gap: 12,
+    // marginBottom: 12,
   },
-  planCardPressable: {
-    borderRadius: 32,
+  planWrapper: {
+    position: "relative",
+    width: "100%",
+  },
+  bestValueBadge: {
+    position: "absolute",
+    top: -10,
+    left: 12,
+    zIndex: 1,
+  },
+  bestValueText: {
+    backgroundColor: "#2196F3",
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  planCard: {
+    borderRadius: 16,
+    overflow: "hidden",
   },
   planCardGradient: {
-    borderRadius: 32,
+    borderRadius: 16,
     padding: 2,
   },
-  planCardInner: {
-    borderRadius: 30,
-    paddingVertical: 20,
-    paddingHorizontal: 22,
-    gap: 14,
-  },
-  planCardInnerDefault: {
-    backgroundColor: 'rgba(15, 12, 24, 0.7)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  planCardInnerSelected: {
-    backgroundColor: 'rgba(6, 4, 12, 0.92)',
-  },
-  planRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  radioOuter: {
-    height: 24,
-    width: 24,
-    borderRadius: 12,
+  planCardSelected: {
+    backgroundColor: "rgba(234, 97, 152, 0.95)",
+    borderColor: "#EA6198",
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  radioOuterSelected: {
-    borderColor: '#EA6198',
+  planCardContent: {
+    backgroundColor: "rgba(60, 60, 60, 0.95)",
+    borderRadius: 14,
+    padding: 16,
+    minHeight: 80,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  planLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  radioButtonSelected: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
   },
   radioInner: {
-    height: 12,
-    width: 12,
-    borderRadius: 6,
-    backgroundColor: '#EA6198',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FFFFFF",
   },
-  planCopy: {
+  planTextContainer: {
     flex: 1,
-    gap: 4,
   },
   planLabel: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
   },
   planHelper: {
-    color: '#B7B5D2',
-    fontSize: 13,
-    fontWeight: '600',
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 11,
+    fontWeight: "500",
   },
   planPrice: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "700",
+    textAlign: "right",
   },
-  yearlyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  billingText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    textAlign: "center",
+    marginVertical: 5,
   },
-  planBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  continueButton: {
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    marginTop:25
   },
-  planBadgeMuted: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  continueButtonGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
-  planBadgeText: {
-    color: '#FFFFFF',
+  continueButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginRight: 8,
+  },
+  continueArrow: {
+    marginLeft: 4,
+  },
+  footerLinks: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "nowrap",
+  },
+  footerLink: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  footerSeparator: {
+    color: "rgba(255,255,255,0.4)",
     fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  primaryButton: {
-    height: 54,
-    borderRadius: 28,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  legalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  legalLink: {
-    color: '#EA6198',
-    fontSize: 13,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
   },
 });
-

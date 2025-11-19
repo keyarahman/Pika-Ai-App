@@ -32,20 +32,21 @@ export const PRO_PLANS = [
   {
     id: 'weekly',
     label: 'Weekly',
-    price: '$9.99/week',
+    price: '$6.99/wk',
+    helper: 'Then $19.99/wk',
   },
   {
     id: 'monthly',
     label: 'Monthly',
-    price: '$14.99/month',
+    price: '$14.99/mo',
     helper: 'Best Value',
   },
   {
     id: 'yearly',
     label: 'Yearly',
-    price: '$29.99/year',
-    helper: 'Just $0.57 per week',
-    badge: 'Best Seller',
+    price: '$0.77/wk',
+    helper: 'Just $39.99/yr',
+    badge: 'BEST VALUE',
   },
 ] as const;
 
