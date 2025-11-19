@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -12,10 +12,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { VIRAL_ITEMS, type CollectionItem } from './(tabs)/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { VIRAL_ITEMS } from './(tabs)/index';
 
 const ONBOARDING_KEY = 'has-seen-onboarding';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,6 +33,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const onboardingItems = useMemo(() => {
     const shuffled = shuffleArray(VIRAL_ITEMS);
@@ -105,24 +106,19 @@ export default function OnboardingScreen() {
                     />
                   ))}
                 </View>
-                <Pressable
-                  style={styles.continueButton}
-                  onPress={isLastSlide ? handleGetStarted : handleNext}>
-                  <LinearGradient
-                    colors={['#EA6198', '#5B5BFF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.buttonGradient}
-                  />
-                  <Text style={styles.continueButtonText}>
-                    {isLastSlide ? 'Get Started' : 'Continue'}
-                  </Text>
-                </Pressable>
               </View>
             </SafeAreaView>
           </View>
         ))}
       </ScrollView>
+      <View style={[styles.buttonContainer, { bottom: insets.bottom + 20, right: 20 }]}>
+        <Pressable
+          style={styles.arrowButton}
+          onPress={isLastSlide ? handleGetStarted : handleNext}
+          hitSlop={8}>
+          <Ionicons name="arrow-forward" size={24} color="#000000" />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -193,20 +189,24 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginBottom: 32,
   },
-  continueButton: {
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
+  buttonContainer: {
+    position: 'absolute',
+  },
+  arrowButton: {
+    width: 90,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  buttonGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 
