@@ -48,8 +48,10 @@ function RootLayoutNav() {
         options={{
           presentation: 'transparentModal',
           headerShown: false,
-          animation: 'slide_from_right',
-          gestureDirection: 'horizontal',
+          animation: 'slide_from_bottom',
+          gestureDirection: 'vertical',
+          gestureEnabled: true,
+          animationDuration: 300,
         }}
       />
       <Stack.Screen

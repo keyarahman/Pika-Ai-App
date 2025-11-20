@@ -8,12 +8,14 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        freezeOnBlur: true,
       }}
       tabBar={(props) => <CustomTabBar {...props} />}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'AI Videos',
+          freezeOnBlur: true,
         }}
       />
       <Tabs.Screen

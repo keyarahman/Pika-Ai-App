@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
-import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -61,7 +60,12 @@ export default function ProModalScreen() {
   const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 3), []);
 
   const handleClose = () => {
-    router.replace("/(tabs)");
+    // Check if we can go back, if not navigate to tabs (handles first-time app launch)
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)");
+    }
   };
 
   const handleCarouselScroll = useCallback((event: any) => {
@@ -72,7 +76,7 @@ export default function ProModalScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent />
+      <StatusBar style="light" translucent animated={false} />
 
       {/* Layer 1: Background - Two Flex Parts (Top/Bottom) */}
       <View style={styles.backgroundLayer}>
@@ -85,12 +89,7 @@ export default function ProModalScreen() {
                 style={styles.backgroundImage}
                 contentFit="cover"
               />
-              {/* Strong Gaussian Blur on Background */}
-              <BlurView
-                intensity={100}
-                tint="dark"
-                style={styles.backgroundBlur}
-              />
+             
             </>
           )}
         </View>
@@ -356,11 +355,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   planCard: {
-    borderRadius: 16,
+    borderRadius: 50,
     overflow: "hidden",
   },
   planCardGradient: {
-    borderRadius: 16,
+    borderRadius: 50,
     padding: 2,
   },
   planCardSelected: {
@@ -436,8 +435,8 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   continueButton: {
-    height: 52,
-    borderRadius: 26,
+    height: 60,
+    borderRadius: 50,
     overflow: "hidden",
     flexDirection: "row",
     alignItems: "center",

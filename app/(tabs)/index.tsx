@@ -35,12 +35,12 @@ export const PRO_PLANS = [
     price: '$6.99/wk',
     helper: 'Then $19.99/wk',
   },
-  {
-    id: 'monthly',
-    label: 'Monthly',
-    price: '$14.99/mo',
-    helper: 'Best Value',
-  },
+  // {
+  //   id: 'monthly',
+  //   label: 'Monthly',
+  //   price: '$14.99/mo',
+  //   helper: 'Best Value',
+  // },
   {
     id: 'yearly',
     label: 'Yearly',
