@@ -1,8 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const TAB_BAR_HORIZONTAL_PADDING = 20 * 2;
+const CONTAINER_HORIZONTAL_PADDING = 12 * 2;
+const ESTIMATED_CONTAINER_WIDTH = SCREEN_WIDTH - TAB_BAR_HORIZONTAL_PADDING - CONTAINER_HORIZONTAL_PADDING;
 
 type TabConfig = {
     label: string;
@@ -18,10 +23,11 @@ const TAB_CONFIG: Record<string, TabConfig> = {
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
-    const [containerWidth, setContainerWidth] = useState(0);
+    const [containerWidth, setContainerWidth] = useState(ESTIMATED_CONTAINER_WIDTH);
     const animatedIndex = useRef(new Animated.Value(state.index)).current;
     const tabCount = state.routes.length;
     const animationRange = useMemo(() => state.routes.map((_, idx) => idx), [state.routes]);
+    const layoutMeasuredRef = useRef(false);
 
     useEffect(() => {
         Animated.spring(animatedIndex, {
@@ -44,28 +50,35 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     }, [itemWidth]);
 
     const handleLayout = (event: LayoutChangeEvent) => {
-        setContainerWidth(event.nativeEvent.layout.width);
+        const measuredWidth = event.nativeEvent.layout.width;
+        // Only update if significantly different to prevent micro-adjustments
+        if (!layoutMeasuredRef.current || Math.abs(measuredWidth - containerWidth) > 3) {
+            setContainerWidth(measuredWidth);
+            layoutMeasuredRef.current = true;
+        }
     };
 
     return (
         <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.container} onLayout={handleLayout}>
-                {highlightWidth > 0 && (
-                    <Animated.View
-                        pointerEvents="none"
-                        style={[
-                            styles.activeHalo,
-                            {
-                                width: highlightWidth,
-                                transform: [
-                                    {
-                                        translateX: Animated.multiply(animatedIndex, itemWidth),
-                                    },
-                                ],
-                            },
-                        ]}
-                    />
-                )}
+                <Animated.View
+                    pointerEvents="none"
+                    style={[
+                        styles.activeHalo,
+                        {
+                            width: highlightWidth || (ESTIMATED_CONTAINER_WIDTH / tabCount - 12),
+                            opacity: highlightWidth > 0 ? 1 : 0,
+                            transform: [
+                                {
+                                    translateX: Animated.multiply(
+                                        animatedIndex,
+                                        itemWidth || (ESTIMATED_CONTAINER_WIDTH / tabCount)
+                                    ),
+                                },
+                            ],
+                        },
+                    ]}
+                />
                 {state.routes.map((route, index) => {
                     const isFocused = state.index === index;
                     const { options } = descriptors[route.key];

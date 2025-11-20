@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FramesSection } from '@/components/frames-section';
 import { ImageToVideoSection } from '@/components/image-to-video-section';
@@ -25,6 +25,7 @@ type AspectRatioId = '21:9' | '9:16' | '16:9' | '4:3' | '1:1';
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { addVideo } = useGeneratedVideos();
   const [activeMode, setActiveMode] = useState<ModeOptionId>('image-to-video');
   const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -224,13 +225,13 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <Text style={styles.title}>Explore</Text>
+      </View>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Explore</Text>
-        </View>
 
         <View style={styles.modeRow}>
           {MODE_OPTIONS.map((option) => {
@@ -323,14 +324,15 @@ export default function ExploreScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#0F0D16',
+
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -338,7 +340,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   header: {
-    marginBottom: 18,
+    marginLeft: 18,
   },
   title: {
     color: '#FFFFFF',

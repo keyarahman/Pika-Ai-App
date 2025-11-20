@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useGeneratedVideos } from '@/store/generated-videos';
 
@@ -48,6 +48,7 @@ export default function MyCreationsScreen() {
   const { videos, removeVideo, updateVideoStatus } = useGeneratedVideos();
   const hasCreations = videos.length > 0;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -131,17 +132,16 @@ export default function MyCreationsScreen() {
   }, [videos, updateVideoStatus]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View>
+          <Text style={styles.title}>My Collections</Text>
+          <Text style={styles.subtitle}>Keep track of everything you generate.</Text>
+        </View>
+      </View>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>My Collections</Text>
-            <Text style={styles.subtitle}>Keep track of everything you generate.</Text>
-          </View>
-        </View>
-
         {hasCreations ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent</Text>
@@ -237,25 +237,32 @@ export default function MyCreationsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0F0D16',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#0F0D16',
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 80,
+    paddingBottom: 100,
     paddingTop: 12,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    backgroundColor: '#0F0D16',
+    // borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    zIndex: 10,
   },
   title: {
     color: '#fff',
