@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initializeRevenueCat } from '@/utils/revenuecat';
 import { hasSeenOnboarding } from './onboarding';
 
 export const unstable_settings = {
@@ -17,19 +18,31 @@ function RootLayoutNav() {
   useEffect(() => {
     let isMounted = true;
 
-    const checkOnboarding = async () => {
+    const initialize = async () => {
       try {
+        // Initialize RevenueCat
+        await initializeRevenueCat();
+        
+        // Check onboarding
         const seen = await hasSeenOnboarding();
-
         if (isMounted && !seen) {
           router.replace('/onboarding');
         }
       } catch (error) {
-        console.warn('Failed to check onboarding status', error);
+        console.warn('Failed to initialize app', error);
+        // Still check onboarding even if RevenueCat fails
+        try {
+          const seen = await hasSeenOnboarding();
+          if (isMounted && !seen) {
+            router.replace('/onboarding');
+          }
+        } catch (onboardingError) {
+          console.warn('Failed to check onboarding status', onboardingError);
+        }
       }
     };
 
-    checkOnboarding();
+    initialize();
 
     return () => {
       isMounted = false;

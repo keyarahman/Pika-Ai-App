@@ -2627,6 +2627,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@revenuecat/purchases-js-hybrid-mappings@npm:17.19.1":
+  version: 17.19.1
+  resolution: "@revenuecat/purchases-js-hybrid-mappings@npm:17.19.1"
+  dependencies:
+    "@revenuecat/purchases-js": 1.18.3
+  checksum: 186e311857ecb63785c628e4fa04474959788977a5edfcef637e27fdf948a49f1a7e4955488d9a214536982f897e9ece5bbf5034e611bdd0571eb20e2423fe82
+  languageName: node
+  linkType: hard
+
+"@revenuecat/purchases-js@npm:1.18.3":
+  version: 1.18.3
+  resolution: "@revenuecat/purchases-js@npm:1.18.3"
+  checksum: e357f9a559b1ba030ff51a84c95745995ef2c7e1d3556d582278b1afe55268be7bd6f4f7e5529ed8513d8d435f759cdf95564276d0e1219256c7cc0839342f64
+  languageName: node
+  linkType: hard
+
+"@revenuecat/purchases-typescript-internal@npm:17.19.1":
+  version: 17.19.1
+  resolution: "@revenuecat/purchases-typescript-internal@npm:17.19.1"
+  checksum: 5f0427e360265a5de3d4d89a2e2207aab9f467ff7e4b66cd8bc4faebecb061ab9a367c53fc685140f04a222e54369b66ae327033a47b62fcd83642e7606e6729
+  languageName: node
+  linkType: hard
+
 "@rtsao/scc@npm:^1.1.0":
   version: 1.1.0
   resolution: "@rtsao/scc@npm:1.1.0"
@@ -4312,6 +4335,7 @@ __metadata:
     react-dom: 19.1.0
     react-native: 0.81.5
     react-native-gesture-handler: ~2.28.0
+    react-native-purchases: ^9.6.7
     react-native-reanimated: ~4.1.1
     react-native-safe-area-context: ~5.6.0
     react-native-screens: ~4.16.0
@@ -8418,6 +8442,23 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 8fb6d8ab7b953c7d7cec8c987cef24f1c5348a293a85cb49c7c53b54ef110c0ca746736ae730e297603c8c76020df912e93915fb17518c4f2f91143757177aba
+  languageName: node
+  linkType: hard
+
+"react-native-purchases@npm:^9.6.7":
+  version: 9.6.7
+  resolution: "react-native-purchases@npm:9.6.7"
+  dependencies:
+    "@revenuecat/purchases-js-hybrid-mappings": 17.19.1
+    "@revenuecat/purchases-typescript-internal": 17.19.1
+  peerDependencies:
+    react: ">= 16.6.3"
+    react-native: ">= 0.73.0"
+    react-native-web: "*"
+  peerDependenciesMeta:
+    react-native-web:
+      optional: true
+  checksum: 24ecc93e7287f25873fb1af1ecdc59a82ac075971dde458603c26f47e9c1b8f19ffc83591394e731b4e1fd6df38fed30bb12b6e3d7061df0af334803c474b65a
   languageName: node
   linkType: hard
 

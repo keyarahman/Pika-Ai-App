@@ -4,8 +4,10 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Pressable,
   ScrollView,
@@ -17,8 +19,15 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { PurchasesPackage } from "react-native-purchases";
 
 import { PRO_PLANS, VIRAL_ITEMS } from "./(tabs)/index";
+import {
+  getCurrentOffering,
+  initializeRevenueCat,
+  purchasePackage,
+  restorePurchases,
+} from "@/utils/revenuecat";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -51,13 +60,55 @@ export default function ProModalScreen() {
   const insets = useSafeAreaInsets();
   const carouselScrollRef = useRef<ScrollView>(null);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
-  const [selectedPlan, setSelectedPlan] =
-    useState<(typeof PRO_PLANS)[number]["id"]>("yearly");
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const plans = useMemo(() => PRO_PLANS, []);
+  const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // Get first 3 viral items for carousel
   const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 3), []);
+
+  // Initialize RevenueCat and fetch offerings
+  useEffect(() => {
+    const fetchOfferings = async () => {
+      try {
+        setIsLoading(true);
+        await initializeRevenueCat();
+        const offering = await getCurrentOffering();
+        
+        if (offering && offering.availablePackages.length > 0) {
+          const availablePackages = offering.availablePackages;
+          setPackages(availablePackages);
+          
+          // Set default selected plan to yearly if available, otherwise weekly
+          const yearlyPackage = availablePackages.find(pkg => 
+            pkg.identifier === 'negarsapp.pikaapp.yearly' || 
+            pkg.identifier.includes('yearly') || 
+            pkg.identifier.includes('annual')
+          );
+          const weeklyPackage = availablePackages.find(pkg => 
+            pkg.identifier === 'negarsapp.pikaapp.pro.weekly' || 
+            pkg.identifier.includes('weekly') || 
+            pkg.identifier.includes('week')
+          );
+          
+          setSelectedPlan(yearlyPackage?.identifier || weeklyPackage?.identifier || availablePackages[0].identifier);
+        } else {
+          // Fallback to hardcoded plans if no offerings available
+          console.warn('No RevenueCat offerings available, using fallback plans');
+        }
+      } catch (error) {
+        console.error('Error fetching offerings:', error);
+        Alert.alert('Error', 'Failed to load subscription plans. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOfferings();
+  }, []);
 
   const handleClose = () => {
     // Check if we can go back, if not navigate to tabs (handles first-time app launch)
@@ -73,6 +124,140 @@ export default function ProModalScreen() {
     const index = Math.round(offsetX / SCREEN_WIDTH);
     setCarouselIndex(index);
   }, []);
+
+  const handlePurchase = async () => {
+    if (!selectedPlan) {
+      Alert.alert('Error', 'Please select a subscription plan');
+      return;
+    }
+
+    const selectedPackage = packages.find(pkg => pkg.identifier === selectedPlan);
+    if (!selectedPackage) {
+      Alert.alert('Error', 'Selected plan not found');
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      const customerInfo = await purchasePackage(selectedPackage);
+      
+      // Check if purchase was successful
+      if (customerInfo.entitlements.active['pro']) {
+        Alert.alert('Success', 'Subscription activated successfully!', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        Alert.alert('Success', 'Purchase completed successfully!');
+      }
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+      
+      // Don't show alert for user cancellation
+      if (error?.userCancelled === true || error?.message?.includes('cancelled')) {
+        return;
+      }
+      
+      const errorMessage = error?.message || 'Failed to complete purchase. Please try again.';
+      Alert.alert('Purchase Failed', errorMessage);
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setIsRestoring(true);
+      const customerInfo = await restorePurchases();
+      
+      if (customerInfo.entitlements.active['pro']) {
+        Alert.alert('Success', 'Purchases restored successfully!', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        Alert.alert('No Purchases', 'No active subscriptions found to restore.');
+      }
+    } catch (error: any) {
+      console.error('Restore error:', error);
+      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  // Format price for display
+  const formatPrice = (packageItem: PurchasesPackage): string => {
+    const product = packageItem.product;
+    const price = product.priceString;
+    
+    // RevenueCat's priceString already includes currency formatting
+    // We can add period suffix if needed, but priceString is usually sufficient
+    // For better UX, we'll try to detect period from identifier
+    const identifier = packageItem.identifier.toLowerCase();
+    
+    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+      // Check if price already includes period info
+      if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
+        return `${price}/yr`;
+      }
+    } else if (identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+      if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
+        return `${price}/wk`;
+      }
+    } else if (identifier.includes('monthly') || identifier.includes('month')) {
+      if (!price.toLowerCase().includes('month') && !price.toLowerCase().includes('mo')) {
+        return `${price}/mo`;
+      }
+    }
+    
+    return price;
+  };
+
+  // Get plan label from package identifier
+  const getPlanLabel = (packageItem: PurchasesPackage): string => {
+    const identifier = packageItem.identifier.toLowerCase();
+    
+    // Handle specific identifiers
+    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+      return 'Yearly';
+    } else if (identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+      return 'Weekly';
+    } else if (identifier.includes('monthly') || identifier.includes('month')) {
+      return 'Monthly';
+    }
+    
+    // Default: use package type
+    return packageItem.packageType.charAt(0).toUpperCase() + packageItem.packageType.slice(1);
+  };
+
+  // Get helper text for plan
+  const getPlanHelper = (packageItem: PurchasesPackage): string | undefined => {
+    const identifier = packageItem.identifier.toLowerCase();
+    
+    // Show helper text for yearly plan
+    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+      const price = packageItem.product.priceString;
+      // Only add /yr if not already in price string
+      if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
+        return `Just ${price}/yr`;
+      }
+      return `Just ${price}`;
+    }
+    
+    return undefined;
+  };
+
+  // Check if plan has badge
+  const hasBadge = (packageItem: PurchasesPackage): boolean => {
+    const identifier = packageItem.identifier.toLowerCase();
+    // Yearly plan gets "BEST VALUE" badge
+    return identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual');
+  };
 
   return (
     <View style={styles.container}>
@@ -135,109 +320,141 @@ export default function ProModalScreen() {
 
         {/* Plans and Buttons - Bottom */}
         <View style={styles.content}>
-          {/* Plan Cards */}
-          <View style={styles.plansContainer}>
-            {plans.map((plan) => {
-              const isSelected = selectedPlan === plan.id;
-              const helperText = "helper" in plan ? plan.helper : undefined;
-              const badgeLabel = "badge" in plan ? plan.badge : undefined;
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#EA6198" />
+              <Text style={styles.loadingText}>Loading subscription plans...</Text>
+            </View>
+          ) : packages.length > 0 ? (
+            <>
+              {/* Plan Cards */}
+              <View style={styles.plansContainer}>
+                {packages.map((packageItem) => {
+                  const isSelected = selectedPlan === packageItem.identifier;
+                  const helperText = getPlanHelper(packageItem);
+                  const badgeLabel = hasBadge(packageItem) ? "BEST VALUE" : undefined;
 
-              return (
-                <View key={plan.id} style={styles.planWrapper}>
-                  {badgeLabel && isSelected && (
-                    <View style={styles.bestValueBadge}>
-                      <Text style={styles.bestValueText}>{badgeLabel}</Text>
-                    </View>
-                  )}
-                  <Pressable
-                    style={[
-                      styles.planCard,
-                      isSelected && styles.planCardSelected,
-                    ]}
-                    onPress={() => setSelectedPlan(plan.id)}
-                  >
-                    {isSelected ? (
-                      <LinearGradient
-                        colors={["#EA6198", "#7135FF"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.planCardGradient}
+                  return (
+                    <View key={packageItem.identifier} style={styles.planWrapper}>
+                      {badgeLabel && isSelected && (
+                        <View style={styles.bestValueBadge}>
+                          <Text style={styles.bestValueText}>{badgeLabel}</Text>
+                        </View>
+                      )}
+                      <Pressable
+                        style={[
+                          styles.planCard,
+                          isSelected && styles.planCardSelected,
+                        ]}
+                        onPress={() => setSelectedPlan(packageItem.identifier)}
                       >
-                        <View style={styles.planCardContent}>
-                          <View style={styles.planLeft}>
-                            <View style={styles.radioButtonSelected}>
-                              <View style={styles.radioInner} />
+                        {isSelected ? (
+                          <LinearGradient
+                            colors={["#EA6198", "#7135FF"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.planCardGradient}
+                          >
+                            <View style={styles.planCardContent}>
+                              <View style={styles.planLeft}>
+                                <View style={styles.radioButtonSelected}>
+                                  <View style={styles.radioInner} />
+                                </View>
+                                <View style={styles.planTextContainer}>
+                                  <Text style={styles.planLabel}>{getPlanLabel(packageItem)}</Text>
+                                  {helperText && (
+                                    <Text style={styles.planHelper}>
+                                      {helperText}
+                                    </Text>
+                                  )}
+                                </View>
+                              </View>
+                              <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
                             </View>
-                            <View style={styles.planTextContainer}>
-                              <Text style={styles.planLabel}>{plan.label}</Text>
-                              {helperText && (
-                                <Text style={styles.planHelper}>
-                                  {helperText}
-                                </Text>
-                              )}
+                          </LinearGradient>
+                        ) : (
+                          <View style={styles.planCardContent}>
+                            <View style={styles.planLeft}>
+                              <View style={styles.radioButton}>
+                                {isSelected && <View style={styles.radioInner} />}
+                              </View>
+                              <View style={styles.planTextContainer}>
+                                <Text style={styles.planLabel}>{getPlanLabel(packageItem)}</Text>
+                                {helperText && (
+                                  <Text style={styles.planHelper}>
+                                    {helperText}
+                                  </Text>
+                                )}
+                              </View>
                             </View>
+                            <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
                           </View>
-                          <Text style={styles.planPrice}>{plan.price}</Text>
-                        </View>
-                      </LinearGradient>
-                    ) : (
-                      <View style={styles.planCardContent}>
-                        <View style={styles.planLeft}>
-                          <View style={styles.radioButton}>
-                            {isSelected && <View style={styles.radioInner} />}
-                          </View>
-                          <View style={styles.planTextContainer}>
-                            <Text style={styles.planLabel}>{plan.label}</Text>
-                            {helperText && (
-                              <Text style={styles.planHelper}>
-                                {helperText}
-                              </Text>
-                            )}
-                          </View>
-                        </View>
-                        <Text style={styles.planPrice}>{plan.price}</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                </View>
-              );
-            })}
-          </View>
+                        )}
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>No subscription plans available</Text>
+              <Text style={styles.errorSubtext}>Please check your connection and try again</Text>
+            </View>
+          )}
 
           {/* Billing Info */}
           {/* <Text style={styles.billingText}>Billed annually. Cancel anytime.</Text> */}
 
           {/* Continue Button */}
-          <Pressable style={styles.continueButton}>
-            <LinearGradient
-              colors={["#EA6198", "#7135FF"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.continueButtonGradient}
-            />
-            <Text style={styles.continueButtonText}>Subscribe</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.continueArrow}
-            />
-          </Pressable>
+          {!isLoading && packages.length > 0 && (
+            <>
+              <Pressable
+                style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
+                onPress={handlePurchase}
+                disabled={isPurchasing || !selectedPlan}
+              >
+                <LinearGradient
+                  colors={["#EA6198", "#7135FF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.continueButtonGradient}
+                />
+                {isPurchasing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.continueButtonText}>Subscribe</Text>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color="#FFFFFF"
+                      style={styles.continueArrow}
+                    />
+                  </>
+                )}
+              </Pressable>
 
-          {/* Footer Links */}
-          <View style={styles.footerLinks}>
-            <Pressable>
-              <Text style={styles.footerLink}>RESTORE PURCHASES</Text>
-            </Pressable>
-            <Text style={styles.footerSeparator}>•</Text>
-            <Pressable>
-              <Text style={styles.footerLink}>PRIVACY POLICY</Text>
-            </Pressable>
-            <Text style={styles.footerSeparator}>•</Text>
-            <Pressable>
-              <Text style={styles.footerLink}>TERMS OF USE</Text>
-            </Pressable>
-          </View>
+              {/* Footer Links */}
+              <View style={styles.footerLinks}>
+                <Pressable onPress={handleRestorePurchases} disabled={isRestoring}>
+                  {isRestoring ? (
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                  ) : (
+                    <Text style={styles.footerLink}>RESTORE PURCHASES</Text>
+                  )}
+                </Pressable>
+                <Text style={styles.footerSeparator}>•</Text>
+                <Pressable>
+                  <Text style={styles.footerLink}>PRIVACY POLICY</Text>
+                </Pressable>
+                <Text style={styles.footerSeparator}>•</Text>
+                <Pressable>
+                  <Text style={styles.footerLink}>TERMS OF USE</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
       </SafeAreaView>
     </View>
@@ -472,5 +689,33 @@ const styles = StyleSheet.create({
   footerSeparator: {
     color: "rgba(255,255,255,0.4)",
     fontSize: 12,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    marginTop: 12,
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  errorText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
   },
 });
