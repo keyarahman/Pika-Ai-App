@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.negarsultana98.DemoPikaApp"
+      "bundleIdentifier": "negarsapp.pikaapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.negarsultana98.DemoPikaApp"
+      "package": "negarsapp.pikaapp"
     },
     "web": {
       "output": "static",
