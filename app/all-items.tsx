@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CollectionItem, VIRAL_ITEMS } from './(tabs)/index';
+import { CollectionItem, VIRAL_ITEMS, AI_ROMANCE_ITEMS } from './(tabs)/index';
 
 const NUM_COLUMNS = 2;
 const HORIZONTAL_PADDING = 20;
@@ -29,6 +29,12 @@ export default function AllItemsScreen() {
   const { title } = useLocalSearchParams<{ title?: string }>();
   const headerTitle =
     typeof title === 'string' && title.trim().length > 0 ? title : 'All Items';
+
+  // Determine which collection to show based on title
+  const collectionData =
+    typeof title === 'string' && title.toLowerCase() === 'ai romance'
+      ? AI_ROMANCE_ITEMS
+      : VIRAL_ITEMS;
 
   const handlePressItem = useCallback(
     (item: CollectionItem) => {
@@ -82,7 +88,7 @@ export default function AllItemsScreen() {
       <FlatList
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.columnWrapper}
-        data={VIRAL_ITEMS}
+        data={collectionData}
         keyExtractor={(item) => item.id}
         numColumns={NUM_COLUMNS}
         renderItem={renderItem}

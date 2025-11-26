@@ -58,7 +58,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359328847686976,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapp_3dtoy_250911.mp4',
   },
   {
     id: '3d-figurine-factory',
@@ -67,8 +67,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359004842664384,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4',
   },
   {
     id: 'kiss-kiss-1',
@@ -78,8 +77,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 315446315336768,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.mp4',
   },
   {
     id: 'kiss-me-to-heaven',
@@ -89,8 +87,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 359166562889024,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.mp4',
   },
   {
     id: 'ghostface-terror',
@@ -100,8 +97,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 362704938833536,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_scream_250930.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: '',
   },
   {
     id: 'silly-bird-shimmy',
@@ -110,8 +106,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 367302749516608,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_birdman_251029.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_birdman_251029.mp4',
   },
   {
     id: 'hi-five-emoji-twin',
@@ -120,8 +115,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 351907687030400,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_uandemoji_250803_2.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb-emoji-251107.mp4',
   },
   {
     id: 'earth-zoom-challenge',
@@ -130,8 +124,7 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 349110259052160,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_earthzoom_250716.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_earthzoom_250716.mp4',
   },
   {
     id: 'old-photo-revival',
@@ -140,36 +133,100 @@ export const VIRAL_ITEMS: CollectionItem[] = [
     templateId: 346384996936128,
     image:
       'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_oldd.gif?x-oss-process=style/cover-webp',
-    videUrl: "https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4"
-
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_oldd.mp4',
+  },
+  {
+    id: 'the-rose-and-freedom',
+    title: 'The Rose and Freedom',
+    prompt: 'The Rose and Freedom',
+    templateId: 368723165573888,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_theroseandfreedom_251103.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_theroseandfreedom_251103.mp4',
+  },
+  {
+    id: 'ai-museum-portrait',
+    title: 'AI Museum Portrait',
+    prompt: 'AI Museum Portrait',
+    templateId: 368689273684736,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_aimuseum_251103.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_aimuseum_251103.mp4',
   },
 ];
 
-const HALLOWEEN_ITEMS: CollectionItem[] = [
+export const AI_ROMANCE_ITEMS: CollectionItem[] = [
   {
-    id: 'sweet-horror',
-    title: 'Sweet Horror',
-    badge: 'Hot',
-    prompt: 'Sweet Horror',
-    templateId: 302325299692608,
+    id: 'hug-together',
+    title: 'Hug Together',
+    prompt: 'Hug Together',
+    templateId: 368689273684736,
     image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=70',
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_aimuseum_251103.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_aimuseum_251103.mp4',
   },
   {
-    id: 'grim-scythe',
-    title: 'Grim Scythe',
-    prompt: 'Grim Scythe',
-    templateId: 302325299692608,
+    id: 'forever-us',
+    title: 'Forever Us',
+    prompt: 'Forever Us',
+    templateId: 326733946317888,
     image:
-      'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=700&q=70',
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kiss2_250805.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_wedding.mp4',
   },
   {
-    id: 'starlit-fae',
-    title: 'Starlit Fae',
-    prompt: 'Starlit Fae',
-    templateId: 302325299692608,
+    id: 'kiss-me-ai',
+    title: 'Kiss Me, AI!',
+    prompt: 'Kiss Me, AI!',
+    templateId: 321958627120000,
     image:
-      'https://images.unsplash.com/photo-1545243424-0ce743321e11?auto=format&fit=crop&w=700&q=70',
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_ailover_250212.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_ailover_250212.mp4',
+  },
+  {
+    id: 'kiss-kiss-romance',
+    title: 'Kiss Kiss',
+    prompt: 'Kiss Kiss',
+    templateId: 315446315336768,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.mp4',
+  },
+  {
+    id: 'hug-your-love',
+    title: 'Hug Your Love',
+    prompt: 'Hug Your Love',
+    templateId: 303624424723200,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugyourlove2_250512.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugyourlove2_250512.mp4',
+  },
+  {
+    id: 'my-boyfriends',
+    title: 'My Boyfriendsssss',
+    prompt: 'My Boyfriendsssss',
+    templateId: 349232463042176,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_yourboys_250716.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_yourboys.mp4',
+  },
+  {
+    id: 'my-girlfriends',
+    title: 'My Girlfriendssss',
+    prompt: 'My Girlfriendssss',
+    templateId: 349232644550272,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_yourgirls_250716.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_yourgirlss.mp4',
+  },
+  {
+    id: 'boom-drop',
+    title: 'BOOM DROP',
+    prompt: 'BOOM DROP',
+    templateId: 339133943656192,
+    image:
+      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_explode_250520.gif?x-oss-process=style/cover-webp',
+    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_explode.mp4',
   },
 ];
 
@@ -199,7 +256,7 @@ export default function HomeScreen() {
   );
 
   const viralItems = useMemo(() => VIRAL_ITEMS, []);
-  const halloweenItems = useMemo(() => HALLOWEEN_ITEMS, []);
+  const aiRomanceItems = useMemo(() => AI_ROMANCE_ITEMS, []);
 
   const handlePressCollectionItem = useCallback(
     (item: CollectionItem) => {
@@ -298,14 +355,19 @@ export default function HomeScreen() {
         <CollectionSection
           title="Viral"
           items={viralItems}
+          limit={6}
           onSeeAll={(sectionTitle) =>
             router.push({ pathname: '/all-items', params: { title: sectionTitle } })
           }
           onPressItem={handlePressCollectionItem}
         />
         <CollectionSection
-          title="Halloween"
-          items={halloweenItems}
+          title="AI Romance"
+          items={aiRomanceItems}
+          limit={6}
+          onSeeAll={(sectionTitle) =>
+            router.push({ pathname: '/all-items', params: { title: sectionTitle } })
+          }
           onPressItem={handlePressCollectionItem}
         />
 
@@ -318,11 +380,14 @@ export default function HomeScreen() {
 type CollectionSectionProps = {
   title: string;
   items: CollectionItem[];
+  limit?: number;
   onSeeAll?: (title: string) => void;
   onPressItem?: (item: CollectionItem) => void;
 };
 
-function CollectionSection({ title, items, onSeeAll, onPressItem }: CollectionSectionProps) {
+function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: CollectionSectionProps) {
+  const displayItems = limit ? items.slice(0, limit) : items;
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -336,7 +401,7 @@ function CollectionSection({ title, items, onSeeAll, onPressItem }: CollectionSe
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.sectionRow}>
-          {items.map((item) => (
+          {displayItems.map((item) => (
             <Pressable
               key={item.id}
               style={styles.collectionCard}
