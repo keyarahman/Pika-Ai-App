@@ -12,6 +12,9 @@ type FeaturedItem = {
   subtitle: string;
   cta: string;
   image: string;
+  prompt?: string;
+  templateId?: number;
+  videUrl?: string;
 };
 
 export type CollectionItem = {
@@ -236,20 +239,37 @@ export default function HomeScreen() {
   const featuredItems = useMemo<FeaturedItem[]>(
     () => [
       {
-        id: 'shimmy',
-        title: 'Shimmy',
-        subtitle: 'Dance with the Silly Bird Shimmy!',
+        id: 'fin-tastic-mermaid',
+        title: 'Fin-tastic Mermaid',
+        subtitle: 'Transform into a magical mermaid!',
         cta: 'Try Now',
         image:
-          'https://images.unsplash.com/photo-1555685812-4b74353a2971?auto=format&fit=crop&w=1200&q=80',
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_mermaid_250528.gif?x-oss-process=style/cover-webp',
+        prompt: 'Fin-tastic Mermaid',
+        templateId: 340541567573824,
+        videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_mermaid_250528.mp4',
       },
       {
-        id: 'ghostface',
-        title: 'Ghostface',
-        subtitle: 'Scream, record, repeat with Ghostface AI!',
-        cta: 'Try Pack',
+        id: 'muscle-pro',
+        title: 'Muscle Pro: Born to Built',
+        subtitle: 'Show off your strength!',
+        cta: 'Try Now',
         image:
-          'https://images.unsplash.com/photo-1508184964240-ee54a02bb736?auto=format&fit=crop&w=1200&q=80',
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_muscle_250914.gif?x-oss-process=style/cover-webp',
+        prompt: 'Muscle Pro: Born to Built',
+        templateId: 359850491398912,
+        videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_muscle_250914.mp4',
+      },
+      {
+        id: 'officer-crush',
+        title: 'Officer Crush',
+        subtitle: 'Become the ultimate officer!',
+        cta: 'Try Now',
+        image:
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.gif?x-oss-process=style/cover-webp',
+        prompt: 'Officer Crush',
+        templateId: 353279785150016,
+        videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.mp4',
       },
     ],
     []
@@ -318,13 +338,46 @@ export default function HomeScreen() {
             contentContainerStyle={{ paddingHorizontal: 20 }}
             snapToAlignment="start">
             {featuredItems.map((item) => (
-              <View key={item.id} style={[styles.featureCard, { width: CARD_WIDTH }]}>
+              <Pressable
+                key={item.id}
+                style={[styles.featureCard, { width: CARD_WIDTH }]}
+                onPress={() => {
+                  if (item.templateId) {
+                    router.push({
+                      pathname: '/item/[id]',
+                      params: {
+                        id: item.id,
+                        title: item.title,
+                        image: item.image,
+                        prompt: item.prompt ?? item.title,
+                        templateId: item.templateId.toString(),
+                        videUrl: item.videUrl ?? '',
+                      },
+                    });
+                  }
+                }}>
                 <Image source={{ uri: item.image }} style={styles.featureImage} />
                 <View style={styles.featureOverlay} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureTitle}>{item.title}</Text>
                   <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
-                  <Pressable style={styles.primaryButton}>
+                  <Pressable
+                    style={styles.primaryButton}
+                    onPress={() => {
+                      if (item.templateId) {
+                        router.push({
+                          pathname: '/item/[id]',
+                          params: {
+                            id: item.id,
+                            title: item.title,
+                            image: item.image,
+                            prompt: item.prompt ?? item.title,
+                            templateId: item.templateId.toString(),
+                            videUrl: item.videUrl ?? '',
+                          },
+                        });
+                      }
+                    }}>
                     <LinearGradient
                       colors={["#EA6198", "#7135FF"]}
                       start={{ x: 0, y: 0 }}
@@ -335,7 +388,7 @@ export default function HomeScreen() {
                     <Text style={styles.primaryButtonText}>{item.cta}</Text>
                   </Pressable>
                 </View>
-              </View>
+              </Pressable>
             ))}
           </ScrollView>
 
