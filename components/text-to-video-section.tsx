@@ -17,6 +17,7 @@ type TextToVideoSectionProps = {
   selectedAspectRatio: AspectRatioId;
   onPromptChange: (prompt: string) => void;
   onAspectRatioChange: (ratio: AspectRatioId) => void;
+  disabled?: boolean;
 };
 
 export function TextToVideoSection({
@@ -24,6 +25,7 @@ export function TextToVideoSection({
   selectedAspectRatio,
   onPromptChange,
   onAspectRatioChange,
+  disabled = false,
 }: TextToVideoSectionProps) {
   const handleSurpriseMe = useCallback(() => {
     const prompts = [
@@ -43,20 +45,22 @@ export function TextToVideoSection({
     <>
       <View style={styles.promptContainer}>
         <TextInput
-          style={styles.promptInput}
+          style={[styles.promptInput, disabled && styles.promptInputDisabled]}
           placeholder="Describe the scene you want to see."
           placeholderTextColor="#6B6D85"
           value={prompt}
           onChangeText={onPromptChange}
           multiline
           textAlignVertical="top"
+          editable={!disabled}
         />
         <Pressable
-          style={styles.surpriseButton}
+          style={[styles.surpriseButton, disabled && styles.surpriseButtonDisabled]}
           onPress={handleSurpriseMe}
+          disabled={disabled}
           android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
-          <Ionicons name="sparkles" size={14} color="#FFFFFF" />
-          <Text style={styles.surpriseText}>Surprise Me</Text>
+          <Ionicons name="sparkles" size={14} color={disabled ? '#6B6D85' : '#FFFFFF'} />
+          <Text style={[styles.surpriseText, disabled && styles.surpriseTextDisabled]}>Surprise Me</Text>
         </Pressable>
       </View>
 
@@ -69,9 +73,19 @@ export function TextToVideoSection({
               <Pressable
                 key={ratio.id}
                 onPress={() => onAspectRatioChange(ratio.id)}
-                style={[styles.aspectRatioButton, isSelected && styles.aspectRatioButtonActive]}
+                disabled={disabled}
+                style={[
+                  styles.aspectRatioButton,
+                  isSelected && styles.aspectRatioButtonActive,
+                  disabled && styles.aspectRatioButtonDisabled,
+                ]}
                 android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
-                <Text style={[styles.aspectRatioLabel, isSelected && styles.aspectRatioLabelActive]}>
+                <Text
+                  style={[
+                    styles.aspectRatioLabel,
+                    isSelected && styles.aspectRatioLabelActive,
+                    disabled && styles.aspectRatioLabelDisabled,
+                  ]}>
                   {ratio.label}
                 </Text>
               </Pressable>
@@ -155,6 +169,21 @@ const styles = StyleSheet.create({
   aspectRatioLabelActive: {
     color: '#FFFFFF',
     fontWeight: '700',
+  },
+  promptInputDisabled: {
+    opacity: 0.5,
+  },
+  surpriseButtonDisabled: {
+    opacity: 0.5,
+  },
+  surpriseTextDisabled: {
+    color: '#6B6D85',
+  },
+  aspectRatioButtonDisabled: {
+    opacity: 0.5,
+  },
+  aspectRatioLabelDisabled: {
+    color: '#6B6D85',
   },
 });
 

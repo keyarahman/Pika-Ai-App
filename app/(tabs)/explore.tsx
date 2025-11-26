@@ -205,6 +205,7 @@ export default function ExploreScreen() {
             selectedAspectRatio={selectedAspectRatio}
             onPromptChange={setTextToVideoPrompt}
             onAspectRatioChange={setSelectedAspectRatio}
+            disabled={true}
           />
         );
       case 'frames':
@@ -217,6 +218,7 @@ export default function ExploreScreen() {
             onEndFrameChange={setEndFrame}
             onPromptChange={setFramesPrompt}
             onPickImage={handlePickImage}
+            disabled={true}
           />
         );
       default:
@@ -262,12 +264,20 @@ export default function ExploreScreen() {
 
 
         <Pressable
-          style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+          style={[
+            styles.generateButton,
+            (isGenerating || activeMode === 'text-to-video' || activeMode === 'frames') &&
+              styles.generateButtonDisabled,
+          ]}
           onPress={handleGenerateVideo}
-          disabled={isGenerating}
+          disabled={isGenerating || activeMode === 'text-to-video' || activeMode === 'frames'}
           android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
           <LinearGradient
-            colors={['#EA6198', '#7135FF']}
+            colors={
+              activeMode === 'text-to-video' || activeMode === 'frames'
+                ? ['#3A3A3A', '#2A2A2A']
+                : ['#EA6198', '#7135FF']
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
@@ -280,6 +290,8 @@ export default function ExploreScreen() {
                 {/* {uploadStatus === 'uploading' ? 'Uploading...' : 'Generating...'} */}
               </Text>
             </View>
+          ) : activeMode === 'text-to-video' || activeMode === 'frames' ? (
+            <Text style={styles.generateText}>Coming Soon</Text>
           ) : (
             <Text style={styles.generateText}>Generate Video</Text>
           )}
