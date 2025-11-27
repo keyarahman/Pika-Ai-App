@@ -82,9 +82,15 @@ export default function OnboardingScreen() {
         style={styles.scrollView}>
         {onboardingItems.map((item, index) => (
           <View key={item.id} style={[styles.slide, { width: SCREEN_WIDTH }]}>
-            <Image source={{ uri: item.image }} style={styles.slideImage} contentFit="cover" />
+            <Image 
+              source={{ uri: item.image }} 
+              style={styles.slideImage} 
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              transition={200}
+            />
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)', '#000']}
+              colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
               style={styles.gradient}
             />
             <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -167,6 +173,9 @@ const styles = StyleSheet.create({
   },
   slideImage: {
     ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000',
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,

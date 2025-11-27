@@ -1,16 +1,18 @@
 {
   "expo": {
-    "name": "DemoPikaApp",
+    "name": "Pika Lab",
     "slug": "DemoPikaApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/icon.png",
     "scheme": "demopikaapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "negarsapp.pikaapp"
+      "bundleIdentifier": "negarsapp.pikaapp",
+      "icon":{"dark": "./assets/icons/icon.png",
+      "light":"./assets/icons/icon.png"}
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +38,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/icons/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
