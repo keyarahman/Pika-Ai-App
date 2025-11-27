@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { initializeRevenueCat } from '@/utils/revenuecat';
+import { requestTrackingPermission } from '@/utils/tracking-transparency';
 import { hasSeenOnboarding } from './onboarding';
 
 export const unstable_settings = {
@@ -20,6 +21,15 @@ function RootLayoutNav() {
 
     const initialize = async () => {
       try {
+        // Request App Tracking Transparency permission (iOS only)
+        try {
+          const { status, granted } = await requestTrackingPermission();
+          console.log('Tracking permission status:', status, 'granted:', granted);
+        } catch (trackingError) {
+          // Tracking transparency is iOS only, ignore errors on other platforms
+          console.log('Tracking transparency not available:', trackingError);
+        }
+
         // Initialize RevenueCat
         await initializeRevenueCat();
         

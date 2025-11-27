@@ -12,7 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "negarsapp.pikaapp",
       "icon":{"dark": "./assets/icons/icon.png",
-      "light":"./assets/icons/icon.png"}
+      "light":"./assets/icons/icon.png"},
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "We use tracking to provide you with personalized content and improve your app experience."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -47,6 +50,7 @@
           }
         }
       ],
+      "expo-tracking-transparency",
       "expo-video"
     ],
     "experiments": {
