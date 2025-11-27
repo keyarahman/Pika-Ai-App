@@ -67,9 +67,10 @@ export default function ProModalScreen() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const shineAnim = useRef(new Animated.Value(0)).current;
+  const autoScrollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Get first 3 viral items for carousel
-  const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 3), []);
+  // Get more viral items for carousel (6 items for better variety)
+  const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 6), []);
 
   // Animate shine effect
   useEffect(() => {
@@ -90,6 +91,38 @@ export default function ProModalScreen() {
     shineAnimation.start();
     return () => shineAnimation.stop();
   }, [shineAnim]);
+
+  // Auto-scroll carousel
+  useEffect(() => {
+    if (carouselItems.length === 0) return;
+
+    const scrollToNext = () => {
+      setCarouselIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % carouselItems.length;
+        carouselScrollRef.current?.scrollTo({
+          x: nextIndex * SCREEN_WIDTH,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    };
+
+    // Auto-scroll every 3 seconds
+    autoScrollTimerRef.current = setInterval(scrollToNext, 3000);
+
+    return () => {
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
+    };
+  }, [carouselItems.length]);
+
+  // Handle manual scroll
+  const handleCarouselScroll = useCallback((event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / SCREEN_WIDTH);
+    setCarouselIndex(index);
+  }, []);
 
   // Initialize RevenueCat and fetch offerings
   useEffect(() => {
@@ -140,12 +173,6 @@ export default function ProModalScreen() {
       router.replace("/(tabs)");
     }
   };
-
-  const handleCarouselScroll = useCallback((event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / SCREEN_WIDTH);
-    setCarouselIndex(index);
-  }, []);
 
   const handlePurchase = async () => {
     if (!selectedPlan) {
@@ -313,17 +340,30 @@ export default function ProModalScreen() {
 
       {/* Layer 1: Background - Two Flex Parts (Top/Bottom) */}
       <View style={styles.backgroundLayer}>
-        {/* Top Part: GIF Image with Blur */}
+        {/* Top Part: Auto-scrolling GIF Carousel */}
         <View style={styles.topBackground}>
           {carouselItems.length > 0 && (
-            <>
-              <Image
-                source={{ uri: carouselItems[0].image }}
-                style={styles.backgroundImage}
-                contentFit="cover"
-              />
-             
-            </>
+            <ScrollView
+              ref={carouselScrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onMomentumScrollEnd={handleCarouselScroll}
+              style={styles.carouselScrollView}
+              contentContainerStyle={styles.carouselContent}>
+              {carouselItems.map((item, index) => (
+                <View key={item.id} style={[styles.carouselItem, { width: SCREEN_WIDTH }]}>
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.backgroundImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={200}
+                  />
+                </View>
+              ))}
+            </ScrollView>
           )}
         </View>
 
@@ -546,10 +586,20 @@ const styles = StyleSheet.create({
   },
   topBackground: {
     flex: 1,
+    overflow: "hidden",
   },
   bottomBackground: {
     flex: 1,
     backgroundColor: "#000",
+  },
+  carouselScrollView: {
+    flex: 1,
+  },
+  carouselContent: {
+    flexDirection: "row",
+  },
+  carouselItem: {
+    height: "100%",
   },
   backgroundImage: {
     width: "100%",

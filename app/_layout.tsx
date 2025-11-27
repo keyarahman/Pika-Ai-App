@@ -65,6 +65,7 @@ function RootLayoutNav() {
       <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="all-items" options={{ headerShown: false }} />
+      <Stack.Screen name="search" options={{ headerShown: false }} />
       <Stack.Screen name="item/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="view-video/[id]" options={{ headerShown: false }} />
       <Stack.Screen
