@@ -14,7 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CollectionItem, VIRAL_ITEMS, AI_ROMANCE_ITEMS } from './(tabs)/index';
+import {
+  CollectionItem,
+  getAllCollectionsItems
+} from './(tabs)/index';
 
 const NUM_COLUMNS = 2;
 const HORIZONTAL_PADDING = 20;
@@ -30,13 +33,13 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Combine all collections for search
-  const allItems = useMemo(() => [...VIRAL_ITEMS, ...AI_ROMANCE_ITEMS], []);
+  // Use merged all collections list for search
+  const allItems = useMemo(() => getAllCollectionsItems(), []);
 
   // Filter items based on search query - show viral list by default
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) {
-      return VIRAL_ITEMS;
+      return allItems;
     }
 
     const query = searchQuery.toLowerCase().trim();

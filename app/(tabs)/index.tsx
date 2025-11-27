@@ -1196,6 +1196,23 @@ export const AI_FUNNY_ITEMS: CollectionItem[] = [
   },
 ];
 
+// Merge all collections into a single list for search
+export const getAllCollectionsItems = (): CollectionItem[] => {
+  return [
+    ...VIRAL_ITEMS,
+    ...AI_ROMANCE_ITEMS,
+    ...AI_STYLE_ITEMS,
+    ...AI_DANCING_ITEMS,
+    ...AI_CHARACTER_ITEMS,
+    ...FASHION_ITEMS,
+    ...FESTIVAL_ITEMS,
+    ...AI_FUNNY_ITEMS,
+  ];
+};
+
+// Export as constant for direct access
+export const ALL_COLLECTIONS_ITEMS = getAllCollectionsItems();
+
 export default function HomeScreen() {
   const router = useRouter();
 
@@ -1566,7 +1583,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F0D16',
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 110,
   },
   headerRow: {
     paddingHorizontal: 20,
@@ -1747,6 +1764,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   bottomSpacer: {
-    height: 40,
+    height: 0,
   },
 });
