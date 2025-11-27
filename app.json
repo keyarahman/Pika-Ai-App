@@ -4,13 +4,19 @@
     "slug": "DemoPikaApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/icon.jpeg",
     "scheme": "demopikaapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "negarsapp.pikaapp"
+      "bundleIdentifier": "negarsapp.pikaapp",
+      "icon":{
+        "dark": "./assets/icons/icon.jpeg",
+        "light": "./assets/icons/icon.jpeg",
+        "tinted":"./assets/icons/icon.jpeg"
+      }
+      
     },
     "android": {
       "adaptiveIcon": {
@@ -36,12 +42,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/icons/icon.jpeg",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#000028",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#000028"
           }
         }
       ],
