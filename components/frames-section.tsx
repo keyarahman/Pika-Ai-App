@@ -12,7 +12,6 @@ type FramesSectionProps = {
   onEndFrameChange: (asset: ImagePicker.ImagePickerAsset | null) => void;
   onPromptChange: (prompt: string) => void;
   onPickImage: () => Promise<ImagePicker.ImagePickerAsset | null>;
-  disabled?: boolean;
 };
 
 export function FramesSection({
@@ -23,7 +22,6 @@ export function FramesSection({
   onEndFrameChange,
   onPromptChange,
   onPickImage,
-  disabled = false,
 }: FramesSectionProps) {
   const handleUploadStartFrame = useCallback(async () => {
     const asset = await onPickImage();
@@ -42,10 +40,7 @@ export function FramesSection({
   return (
     <>
       <View style={styles.framesContainer}>
-        <Pressable
-          style={[styles.frameBox, disabled && styles.frameBoxDisabled]}
-          onPress={handleUploadStartFrame}
-          disabled={disabled}>
+        <Pressable style={styles.frameBox} onPress={handleUploadStartFrame}>
           {startFrame ? (
             <>
               <Image source={{ uri: startFrame.uri }} style={styles.framePreview} contentFit="cover" />
@@ -57,16 +52,13 @@ export function FramesSection({
           ) : (
             <>
               <View style={styles.frameIconContainer}>
-                <Ionicons name="cloud-upload-outline" size={26} color={disabled ? '#6B6D85' : '#7135FF'} />
+                <Ionicons name="cloud-upload-outline" size={26} color="#7135FF" />
               </View>
               <Text style={styles.frameLabel}>Start Frame</Text>
             </>
           )}
         </Pressable>
-        <Pressable
-          style={[styles.frameBox, disabled && styles.frameBoxDisabled]}
-          onPress={handleUploadEndFrame}
-          disabled={disabled}>
+        <Pressable style={styles.frameBox} onPress={handleUploadEndFrame}>
           {endFrame ? (
             <>
               <Image source={{ uri: endFrame.uri }} style={styles.framePreview} contentFit="cover" />
@@ -78,7 +70,7 @@ export function FramesSection({
           ) : (
             <>
               <View style={styles.frameIconContainer}>
-                <Ionicons name="cloud-upload-outline" size={26} color={disabled ? '#6B6D85' : '#7135FF'} />
+                <Ionicons name="cloud-upload-outline" size={26} color="#7135FF" />
               </View>
               <Text style={styles.frameLabel}>End Frame</Text>
             </>
@@ -88,20 +80,16 @@ export function FramesSection({
 
       <View style={styles.promptContainer}>
         <TextInput
-          style={[styles.promptInput, disabled && styles.promptInputDisabled]}
+          style={styles.promptInput}
           placeholder="Describe the scene you want to see and choose the camera movements from the options below."
           placeholderTextColor="#6B6D85"
           value={prompt}
           onChangeText={onPromptChange}
           multiline
           textAlignVertical="top"
-          editable={!disabled}
         />
-        <Pressable
-          style={[styles.promptAction, disabled && styles.promptActionDisabled]}
-          disabled={disabled}
-          android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
-          <Ionicons name="videocam-outline" size={18} color={disabled ? '#6B6D85' : '#FFFFFF'} />
+        <Pressable style={styles.promptAction} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+          <Ionicons name="videocam-outline" size={18} color="#FFFFFF" />
         </Pressable>
       </View>
     </>
@@ -192,15 +180,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#252233',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  frameBoxDisabled: {
-    opacity: 0.5,
-  },
-  promptInputDisabled: {
-    opacity: 0.5,
-  },
-  promptActionDisabled: {
-    opacity: 0.5,
   },
 });
 
