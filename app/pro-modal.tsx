@@ -7,13 +7,12 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
-  Dimensions,
+  Alert, Animated, Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { PurchasesPackage } from "react-native-purchases";
 import {
@@ -66,9 +65,30 @@ export default function ProModalScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const shineAnim = useRef(new Animated.Value(0)).current;
 
   // Get first 3 viral items for carousel
   const carouselItems = useMemo(() => VIRAL_ITEMS.slice(0, 3), []);
+
+  // Animate shine effect
+  useEffect(() => {
+    const shineAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shineAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shineAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    shineAnimation.start();
+    return () => shineAnimation.stop();
+  }, [shineAnim]);
 
   // Initialize RevenueCat and fetch offerings
   useEffect(() => {
@@ -195,16 +215,26 @@ export default function ProModalScreen() {
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const product = packageItem.product;
     const price = product.priceString;
-    
-    // RevenueCat's priceString already includes currency formatting
-    // We can add period suffix if needed, but priceString is usually sufficient
-    // For better UX, we'll try to detect period from identifier
     const identifier = packageItem.identifier.toLowerCase();
     
+    // For yearly plans, show weekly price
     if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
-      // Check if price already includes period info
-      if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
-        return `${price}/yr`;
+      try {
+        // Extract numeric value from price string (handles various currency formats)
+        const numericPrice = product.price;
+        const currencyCode = product.currencyCode || 'USD';
+        const currencySymbol = getCurrencySymbol(currencyCode);
+        
+        // Calculate weekly price (annual / 52 weeks)
+        const weeklyPrice = numericPrice / 52;
+        
+        // Format to 2 decimal places
+        const formattedWeeklyPrice = weeklyPrice.toFixed(2);
+        
+        return `${currencySymbol}${formattedWeeklyPrice}/wk`;
+      } catch (error) {
+        // Fallback to original price if calculation fails
+        return price;
       }
     } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
       if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
@@ -217,6 +247,22 @@ export default function ProModalScreen() {
     }
     
     return price;
+  };
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currencyCode: string): string => {
+    const symbols: { [key: string]: string } = {
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      CAD: 'C$',
+      AUD: 'A$',
+      CHF: 'CHF',
+      CNY: '¥',
+      INR: '₹',
+    };
+    return symbols[currencyCode] || '$';
   };
 
   // Get plan label from package identifier
@@ -300,27 +346,29 @@ export default function ProModalScreen() {
           </Pressable>
         </View>
 
-        {/* Benefits List - Top */}
-        <View style={styles.benefitsContainer}>
-          {BENEFITS.map((benefit, index) => (
-            <View key={index} style={styles.benefitRow}>
-              <View style={styles.benefitIconContainer}>
-                <LinearGradient
-                  colors={["#EA6198", "#7135FF"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.benefitIconGradient}
-                >
-                  <Ionicons name="checkmark" size={15} color="#FFFFFF" />
-                </LinearGradient>
-              </View>
-              <Text style={styles.benefitText}>{benefit.text}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* Plans and Buttons - Bottom */}
         <View style={styles.content}>
+          {/* Title */}
+          <Text style={styles.proTitle}>Get Pika Lab Pro</Text>
+
+          {/* Benefits List - Above Plans */}
+          <View style={styles.benefitsContainer}>
+            {BENEFITS.map((benefit, index) => (
+              <View key={index} style={styles.benefitRow}>
+                <View style={styles.benefitIconContainer}>
+                  <LinearGradient
+                    colors={["#EA6198", "#7135FF"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.benefitIconGradient}
+                  >
+                    <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                  </LinearGradient>
+                </View>
+                <Text style={styles.benefitText}>{benefit.text}</Text>
+              </View>
+            ))}
+          </View>
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#EA6198" />
@@ -337,9 +385,31 @@ export default function ProModalScreen() {
 
                   return (
                     <View key={packageItem.identifier} style={styles.planWrapper}>
-                      {badgeLabel && isSelected && (
+                      {badgeLabel && (
                         <View style={styles.bestValueBadge}>
-                          <Text style={styles.bestValueText}>{badgeLabel}</Text>
+                          <LinearGradient
+                            colors={["#4A90E2", "#357ABD", "#2196F3"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.bestValueGradient}
+                          >
+                            <Animated.View
+                              style={[
+                                styles.bestValueShine,
+                                {
+                                  transform: [
+                                    {
+                                      translateX: shineAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-50, 100],
+                                      }),
+                                    },
+                                  ],
+                                },
+                              ]}
+                            />
+                            <Text style={styles.bestValueText}>{badgeLabel}</Text>
+                          </LinearGradient>
                         </View>
                       )}
                       <Pressable
@@ -517,17 +587,26 @@ const styles = StyleSheet.create({
     zIndex: 12,
     justifyContent: "flex-end",
   },
+  proTitle: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 24,
+    letterSpacing: 0.5,
+  },
   benefitsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 150,
-    paddingBottom: 20,
+    alignItems: "center",
+    marginBottom: 32,
     gap: 12,
     zIndex: 12,
   },
   benefitRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 12,
+    width: "100%",
   },
   benefitIconContainer: {
     width: 24,
@@ -559,18 +638,38 @@ const styles = StyleSheet.create({
   bestValueBadge: {
     position: "absolute",
     top: -10,
-    left: 12,
+    right: 12,
     zIndex: 1,
+    shadowColor: "#2196F3",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  bestValueGradient: {
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    overflow: "hidden",
+    position: "relative",
+  },
+  bestValueShine: {
+    position: "absolute",
+    top: 0,
+    width: 40,
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    transform: [{ skewX: "-20deg" }],
   },
   bestValueText: {
-    backgroundColor: "#2196F3",
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    zIndex: 1,
   },
   planCard: {
     borderRadius: 50,
@@ -578,18 +677,18 @@ const styles = StyleSheet.create({
   },
   planCardGradient: {
     borderRadius: 50,
-    padding: 2,
+    padding: 1,
   },
   planCardSelected: {
     backgroundColor: "rgba(234, 97, 152, 0.95)",
     borderColor: "#EA6198",
-    borderWidth: 2,
+    borderWidth: 1,
   },
   planCardContent: {
     backgroundColor: "rgba(60, 60, 60, 0.95)",
-    borderRadius: 14,
-    padding: 16,
-    minHeight: 80,
+    borderRadius: 20,
+    padding: 14,
+    minHeight: 70,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -653,7 +752,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   continueButton: {
-    height: 60,
+    height: 55,
     borderRadius: 50,
     overflow: "hidden",
     flexDirection: "row",
