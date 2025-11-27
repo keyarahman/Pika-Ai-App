@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -516,11 +517,11 @@ export default function ProModalScreen() {
                   )}
                 </Pressable>
                 <Text style={styles.footerSeparator}>•</Text>
-                <Pressable>
+                <Pressable onPress={() => Linking.openURL('https://www.appleov.com/privacy-policy')}>
                   <Text style={styles.footerLink}>PRIVACY POLICY</Text>
                 </Pressable>
                 <Text style={styles.footerSeparator}>•</Text>
-                <Pressable>
+                <Pressable onPress={() => Linking.openURL('https://www.appleov.com/terms-and-conditions')}>
                   <Text style={styles.footerLink}>TERMS OF USE</Text>
                 </Pressable>
               </View>

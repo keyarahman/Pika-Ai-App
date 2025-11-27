@@ -22,13 +22,7 @@ function RootLayoutNav() {
     const initialize = async () => {
       try {
         // Request App Tracking Transparency permission (iOS only)
-        try {
-          const { status, granted } = await requestTrackingPermission();
-          console.log('Tracking permission status:', status, 'granted:', granted);
-        } catch (trackingError) {
-          // Tracking transparency is iOS only, ignore errors on other platforms
-          console.log('Tracking transparency not available:', trackingError);
-        }
+       
 
         // Initialize RevenueCat
         await initializeRevenueCat();
@@ -37,6 +31,13 @@ function RootLayoutNav() {
         const seen = await hasSeenOnboarding();
         if (isMounted && !seen) {
           router.replace('/onboarding');
+           try {
+          const { status, granted } = await requestTrackingPermission();
+          console.log('Tracking permission status:', status, 'granted:', granted);
+        } catch (trackingError) {
+          // Tracking transparency is iOS only, ignore errors on other platforms
+          console.log('Tracking transparency not available:', trackingError);
+        }
         }
       } catch (error) {
         console.warn('Failed to initialize app', error);

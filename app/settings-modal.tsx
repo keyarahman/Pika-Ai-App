@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
@@ -24,11 +25,11 @@ export default function SettingsModal() {
   };
 
   const handlePrivacyPolicy = async () => {
-    await Linking.openURL('https://pika.art/privacy');
+    await Linking.openURL('https://www.appleov.com/privacy-policy');
   };
 
   const handleTerms = async () => {
-    await Linking.openURL('https://pika.art/terms');
+    await Linking.openURL('https://www.appleov.com/terms-and-conditions');
   };
 
   const handleShare = async () => {
@@ -125,16 +126,28 @@ export default function SettingsModal() {
 
             <Pressable
               style={styles.row}
-              onPress={() => Linking.openURL('mailto:support@pika.art')}>
+              onPress={() => {
+                // Open mail app directly - will work on real devices with mail configured
+                Linking.openURL('mailto:support@appleov.com?subject=Support Request').catch(() => {
+                  // Silently handle error - mail app might not be available on simulator
+                });
+              }}>
               <View style={styles.rowIconMuted}>
                 <Ionicons name="chatbox-ellipses-outline" size={18} color="#AEA9DA" />
               </View>
               <View style={styles.rowContent}>
                 <Text style={styles.rowTitle}>Contact Support</Text>
-                <Text style={styles.rowSubtitle}>support@pika.art</Text>
+                <Text style={styles.rowSubtitle}>support@appleov.com</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#77759A" />
             </Pressable>
+          </View>
+
+          {/* App Version */}
+          <View style={styles.versionContainer}>
+            <Text style={styles.versionText}>
+              Version {Constants.expoConfig?.version || '1.0.0'}
+            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -222,6 +235,16 @@ const styles = StyleSheet.create({
   rowSubtitle: {
     color: '#ABA6CB',
     fontSize: 13,
+    fontWeight: '500',
+  },
+  versionContainer: {
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  versionText: {
+    color: '#77759A',
+    fontSize: 12,
     fontWeight: '500',
   },
 });
