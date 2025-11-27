@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -13,7 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CollectionItem, VIRAL_ITEMS, AI_ROMANCE_ITEMS } from './(tabs)/index';
+import {
+  AI_DANCING_ITEMS,
+  AI_ROMANCE_ITEMS,
+  AI_STYLE_ITEMS,
+  CollectionItem,
+  VIRAL_ITEMS,
+} from './(tabs)/index';
 
 const NUM_COLUMNS = 2;
 const HORIZONTAL_PADDING = 20;
@@ -26,15 +32,47 @@ const CARD_WIDTH =
 
 export default function AllItemsScreen() {
   const router = useRouter();
-  const { title } = useLocalSearchParams<{ title?: string }>();
+  const { title, items: itemsParam } = useLocalSearchParams<{
+    title?: string;
+    items?: string;
+  }>();
   const headerTitle =
     typeof title === 'string' && title.trim().length > 0 ? title : 'All Items';
 
-  // Determine which collection to show based on title
-  const collectionData =
-    typeof title === 'string' && title.toLowerCase() === 'ai romance'
-      ? AI_ROMANCE_ITEMS
-      : VIRAL_ITEMS;
+  // Parse items from params or fallback to default collections
+  const collectionData = useMemo(() => {
+    // If items are passed as params, parse and use them
+    if (itemsParam && typeof itemsParam === 'string') {
+      try {
+        const parsedItems = JSON.parse(itemsParam) as CollectionItem[];
+        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+          return parsedItems;
+        }
+      } catch (error) {
+        console.warn('Failed to parse items from params:', error);
+      }
+    }
+
+    // Fallback: Determine collection based on title if items not provided
+    if (title && typeof title === 'string') {
+      const normalizedTitle = title.toLowerCase().trim();
+      const collectionMap: { [key: string]: CollectionItem[] } = {
+        viral: VIRAL_ITEMS,
+        'ai romance': AI_ROMANCE_ITEMS,
+        'ai style': AI_STYLE_ITEMS,
+        'ai dancing': AI_DANCING_ITEMS,
+      };
+
+      for (const [key, items] of Object.entries(collectionMap)) {
+        if (normalizedTitle === key || normalizedTitle.includes(key)) {
+          return items;
+        }
+      }
+    }
+
+    // Default to Viral if no match found
+    return VIRAL_ITEMS;
+  }, [title, itemsParam]);
 
   const handlePressItem = useCallback(
     (item: CollectionItem) => {
