@@ -15,19 +15,19 @@ import {
   Text,
   View,
 } from "react-native";
+import { PurchasesPackage } from "react-native-purchases";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { PurchasesPackage } from "react-native-purchases";
 
-import { PRO_PLANS, VIRAL_ITEMS } from "./(tabs)/index";
 import {
   getCurrentOffering,
   initializeRevenueCat,
   purchasePackage,
   restorePurchases,
 } from "@/utils/revenuecat";
+import { VIRAL_ITEMS } from "./(tabs)/index";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -77,18 +77,19 @@ export default function ProModalScreen() {
         setIsLoading(true);
         await initializeRevenueCat();
         const offering = await getCurrentOffering();
-        
         if (offering && offering.availablePackages.length > 0) {
           const availablePackages = offering.availablePackages;
           setPackages(availablePackages);
           
           // Set default selected plan to yearly if available, otherwise weekly
           const yearlyPackage = availablePackages.find(pkg => 
+            pkg.identifier === '$rc_annual' || 
             pkg.identifier === 'negarsapp.pikaapp.yearly' || 
             pkg.identifier.includes('yearly') || 
             pkg.identifier.includes('annual')
           );
           const weeklyPackage = availablePackages.find(pkg => 
+            pkg.identifier === '$rc_weekly' || 
             pkg.identifier === 'negarsapp.pikaapp.pro.weekly' || 
             pkg.identifier.includes('weekly') || 
             pkg.identifier.includes('week')
@@ -200,12 +201,12 @@ export default function ProModalScreen() {
     // For better UX, we'll try to detect period from identifier
     const identifier = packageItem.identifier.toLowerCase();
     
-    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
       // Check if price already includes period info
       if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
         return `${price}/yr`;
       }
-    } else if (identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
       if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
         return `${price}/wk`;
       }
@@ -223,9 +224,9 @@ export default function ProModalScreen() {
     const identifier = packageItem.identifier.toLowerCase();
     
     // Handle specific identifiers
-    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
       return 'Yearly';
-    } else if (identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
       return 'Weekly';
     } else if (identifier.includes('monthly') || identifier.includes('month')) {
       return 'Monthly';
@@ -240,7 +241,7 @@ export default function ProModalScreen() {
     const identifier = packageItem.identifier.toLowerCase();
     
     // Show helper text for yearly plan
-    if (identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
       const price = packageItem.product.priceString;
       // Only add /yr if not already in price string
       if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
@@ -256,7 +257,7 @@ export default function ProModalScreen() {
   const hasBadge = (packageItem: PurchasesPackage): boolean => {
     const identifier = packageItem.identifier.toLowerCase();
     // Yearly plan gets "BEST VALUE" badge
-    return identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual');
+    return identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual');
   };
 
   return (

@@ -50,7 +50,9 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
  */
 export async function getCurrentOffering(): Promise<PurchasesOffering | null> {
   try {
+    console.log('Getting current offering...');
     const offerings = await getOfferings();
+    console.log('Current offering:', offerings?.current);
     if (!offerings) {
       return null;
     }
