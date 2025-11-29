@@ -40,15 +40,23 @@ export default function SettingsModal() {
 
   // Get subscription expiry date
   const getExpiryDate = (): string | null => {
-    if (!customerInfo?.entitlements.active['pro']) return null;
-    const expiryDate = customerInfo.entitlements.active['pro'].expirationDate;
+    if (!customerInfo) return null;
+
+    // Check for active entitlement - try 'Appleov Pro' first, then 'pro'
+    const activeEntitlement = customerInfo.entitlements.active['Appleov Pro'] ||
+      customerInfo.entitlements.active['pro'];
+
+    if (!activeEntitlement) return null;
+
+    const expiryDate = activeEntitlement.expirationDate;
     if (!expiryDate) return null;
+
     try {
       const date = new Date(expiryDate);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     } catch {
       return null;
@@ -130,7 +138,14 @@ export default function SettingsModal() {
                 <View style={styles.rowContent}>
                   <Text style={styles.rowTitle}>Upgrade to Pro</Text>
                   <Text style={styles.rowSubtitle}>
-                    {PRO_PLANS[PRO_PLANS.length - 1].price} • {PRO_PLANS[PRO_PLANS.length - 1].helper}
+                    {(() => {
+                      const lastPlan = PRO_PLANS[PRO_PLANS.length - 1];
+                      if (!lastPlan) return '';
+                      const helper = 'helper' in lastPlan ? lastPlan.helper : undefined;
+                      return helper
+                        ? `${lastPlan.price} • ${helper}`
+                        : lastPlan.price;
+                    })()}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#77759A" />
