@@ -60,7 +60,7 @@ export default function AllItemsScreen() {
       const normalizedTitle = title.toLowerCase().trim();
       const collectionMap: { [key: string]: CollectionItem[] } = {
         viral: VIRAL_ITEMS,
-        'ai romance': AI_ROMANCE_ITEMS,
+        // 'ai romance': AI_ROMANCE_ITEMS, // Commented out for App Store review
         'ai style': AI_STYLE_ITEMS,
         'ai dancing': AI_DANCING_ITEMS,
       };

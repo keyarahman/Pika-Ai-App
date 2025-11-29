@@ -72,26 +72,27 @@ export const VIRAL_ITEMS: CollectionItem[] = [
       'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.gif?x-oss-process=style/cover-webp',
     videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2F3dtoy_250909.mp4',
   },
-  {
-    id: 'kiss-kiss-1',
-    title: 'Kiss Kiss',
-    prompt: 'Kiss Kiss',
-    badge: 'Hot',
-    templateId: 315446315336768,
-    image:
-      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
-    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.mp4',
-  },
-  {
-    id: 'kiss-me-to-heaven',
-    title: 'Kiss Me to Heaven',
-    prompt: 'Kiss Me to Heaven',
-    badge: 'New',
-    templateId: 359166562889024,
-    image:
-      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
-    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.mp4',
-  },
+  // Commented out for App Store review - kiss related content
+  // {
+  //   id: 'kiss-kiss-1',
+  //   title: 'Kiss Kiss',
+  //   prompt: 'Kiss Kiss',
+  //   badge: 'Hot',
+  //   templateId: 315446315336768,
+  //   image:
+  //     'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.gif?x-oss-process=style/cover-webp',
+  //   videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_kisskiss_0610.mp4',
+  // },
+  // {
+  //   id: 'kiss-me-to-heaven',
+  //   title: 'Kiss Me to Heaven',
+  //   prompt: 'Kiss Me to Heaven',
+  //   badge: 'New',
+  //   templateId: 359166562889024,
+  //   image:
+  //     'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.gif?x-oss-process=style/cover-webp',
+  //   videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_wetkiss_250910.mp4',
+  // },
   {
     id: 'ghostface-terror',
     title: 'Ghostface Terror',
@@ -201,15 +202,16 @@ export const VIRAL_ITEMS: CollectionItem[] = [
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_testyourworkplacepersona_251027.gif?x-oss-process=style/cover-webp',
     videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_testyourworkplacepersona_251027.mp4',
   },
-  {
-    id: 'hug-lord-ganesha',
-    title: 'Hug Lord Ganesha',
-    prompt: 'Hug Lord Ganesha',
-    templateId: 339164540606208,
-    image:
-      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_india_250905.gif?x-oss-process=style/cover-webp',
-    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_india_250905.mp4',
-  },
+  // Commented out for App Store review - hug related content
+  // {
+  //   id: 'hug-lord-ganesha',
+  //   title: 'Hug Lord Ganesha',
+  //   prompt: 'Hug Lord Ganesha',
+  //   templateId: 339164540606208,
+  //   image:
+  //     'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_india_250905.gif?x-oss-process=style/cover-webp',
+  //   videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_india_250905.mp4',
+  // },
   {
     id: 'alien-kidnap',
     title: 'Alien Kidnap',
@@ -221,6 +223,9 @@ export const VIRAL_ITEMS: CollectionItem[] = [
   },
 ];
 
+// Commented out for App Store review - AI Romance collection
+export const AI_ROMANCE_ITEMS: CollectionItem[] = [] as CollectionItem[]; // Empty array for App Store review
+/* Original AI_ROMANCE_ITEMS - commented out for App Store review
 export const AI_ROMANCE_ITEMS: CollectionItem[] = [
   {
     id: 'hug-together',
@@ -348,7 +353,7 @@ export const AI_ROMANCE_ITEMS: CollectionItem[] = [
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_tears_250508.gif?x-oss-process=style/cover-webp',
     videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_tears_250508.mp4',
   },
-];
+]; */
 
 export const AI_STYLE_ITEMS: CollectionItem[] = [
   {
@@ -1167,15 +1172,16 @@ export const AI_FUNNY_ITEMS: CollectionItem[] = [
       'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_dresspet_250401.gif?x-oss-process=style/cover-webp',
     videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_dresspet_250401.mp4',
   },
-  {
-    id: 'huge-cutie',
-    title: 'Huge Cutie',
-    prompt: 'Huge Cutie',
-    templateId: 329607251526400,
-    image:
-      'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugecutie_250327.gif?x-oss-process=style/cover-webp',
-    videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugecutie_250327.mp4',
-  },
+  // Commented out for App Store review - hug related content
+  // {
+  //   id: 'huge-cutie',
+  //   title: 'Huge Cutie',
+  //   prompt: 'Huge Cutie',
+  //   templateId: 329607251526400,
+  //   image:
+  //     'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugecutie_250327.gif?x-oss-process=style/cover-webp',
+  //   videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_hugecutie_250327.mp4',
+  // },
   {
     id: 'polar-bear-shock',
     title: 'Polar Bear Shock',
@@ -1200,7 +1206,7 @@ export const AI_FUNNY_ITEMS: CollectionItem[] = [
 export const getAllCollectionsItems = (): CollectionItem[] => {
   return [
     ...VIRAL_ITEMS,
-    ...AI_ROMANCE_ITEMS,
+    // ...AI_ROMANCE_ITEMS, // Commented out for App Store review
     ...AI_STYLE_ITEMS,
     ...AI_DANCING_ITEMS,
     ...AI_CHARACTER_ITEMS,
@@ -1256,7 +1262,8 @@ export default function HomeScreen() {
   );
 
   const viralItems = useMemo(() => VIRAL_ITEMS, []);
-  const aiRomanceItems = useMemo(() => AI_ROMANCE_ITEMS, []);
+  // const aiRomanceItems = useMemo(() => AI_ROMANCE_ITEMS, []); // Commented out for App Store review
+  const aiRomanceItems = useMemo(() => [] as CollectionItem[], []); // Empty array for App Store review
   const aiStyleItems = useMemo(() => AI_STYLE_ITEMS, []);
   const aiDancingItems = useMemo(() => AI_DANCING_ITEMS, []);
   const aiCharacterItems = useMemo(() => AI_CHARACTER_ITEMS, []);
@@ -1416,7 +1423,8 @@ export default function HomeScreen() {
           }
           onPressItem={handlePressCollectionItem}
         />
-        <MemoizedCollectionSection
+        {/* Commented out for App Store review - AI Romance collection */}
+        {/* <MemoizedCollectionSection
           title="AI Romance"
           items={aiRomanceItems}
           limit={6}
@@ -1430,7 +1438,7 @@ export default function HomeScreen() {
             })
           }
           onPressItem={handlePressCollectionItem}
-        />
+        /> */}
 
         <MemoizedCollectionSection
           title="Style Fusion"
