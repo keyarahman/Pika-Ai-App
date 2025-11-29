@@ -255,31 +255,19 @@ export default function ProModalScreen() {
     }
   };
 
-  // Format price for display
+  // Format price for display - shows the ACTUAL BILLED AMOUNT (most prominent)
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const product = packageItem.product;
     const price = product.priceString;
     const identifier = packageItem.identifier.toLowerCase();
     
-    // For yearly plans, show weekly price
+    // For yearly plans, show the ACTUAL YEARLY PRICE (billed amount)
     if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
-      try {
-        // Extract numeric value from price string (handles various currency formats)
-        const numericPrice = product.price;
-        const currencyCode = product.currencyCode || 'USD';
-        const currencySymbol = getCurrencySymbol(currencyCode);
-        
-        // Calculate weekly price (annual / 52 weeks)
-        const weeklyPrice = numericPrice / 52;
-        
-        // Format to 2 decimal places
-        const formattedWeeklyPrice = weeklyPrice.toFixed(2);
-        
-        return `${currencySymbol}${formattedWeeklyPrice}/wk`;
-      } catch (error) {
-        // Fallback to original price if calculation fails
-        return price;
+      // Return the actual billed amount (yearly price)
+      if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
+        return `${price}/yr`;
       }
+      return price;
     } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
       if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
         return `${price}/wk`;
@@ -291,6 +279,31 @@ export default function ProModalScreen() {
     }
     
     return price;
+  };
+
+  // Get weekly calculated price as helper text (subordinate, smaller)
+  const getWeeklyCalculatedPrice = (packageItem: PurchasesPackage): string | null => {
+    const identifier = packageItem.identifier.toLowerCase();
+    
+    // Only show weekly calculated price for yearly plans
+    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+      try {
+        const product = packageItem.product;
+        const numericPrice = product.price;
+        const currencyCode = product.currencyCode || 'USD';
+        const currencySymbol = getCurrencySymbol(currencyCode);
+        
+        // Calculate weekly price (annual / 52 weeks)
+        const weeklyPrice = numericPrice / 52;
+        const formattedWeeklyPrice = weeklyPrice.toFixed(2);
+        
+        return `${currencySymbol}${formattedWeeklyPrice}/wk`;
+      } catch (error) {
+        return null;
+      }
+    }
+    
+    return null;
   };
 
   // Helper function to get currency symbol
@@ -326,20 +339,9 @@ export default function ProModalScreen() {
     return packageItem.packageType.charAt(0).toUpperCase() + packageItem.packageType.slice(1);
   };
 
-  // Get helper text for plan
+  // Get helper text for plan - removed, we'll use weekly calculated price instead
   const getPlanHelper = (packageItem: PurchasesPackage): string | undefined => {
-    const identifier = packageItem.identifier.toLowerCase();
-    
-    // Show helper text for yearly plan
-    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
-      const price = packageItem.product.priceString;
-      // Only add /yr if not already in price string
-      if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
-        return `Just ${price}/yr`;
-      }
-      return `Just ${price}`;
-    }
-    
+    // Helper text removed - weekly calculated price will be shown separately as subordinate text
     return undefined;
   };
 
@@ -441,7 +443,7 @@ export default function ProModalScreen() {
                     packageItem.identifier === currentPlanIdentifier ||
                     packageItem.product.identifier === currentPlanIdentifier
                   );
-                  const helperText = getPlanHelper(packageItem);
+                  const weeklyCalculatedPrice = getWeeklyCalculatedPrice(packageItem);
                   const badgeLabel = hasBadge(packageItem) ? "BEST VALUE" : undefined;
 
                   return (
@@ -499,9 +501,9 @@ export default function ProModalScreen() {
                                 </View>
                                 <View style={styles.planTextContainer}>
                                   <Text style={styles.planLabel}>{getPlanLabel(packageItem)}</Text>
-                                  {helperText && (
+                                  {weeklyCalculatedPrice && (
                                     <Text style={styles.planHelper}>
-                                      {helperText}
+                                      {weeklyCalculatedPrice}
                                     </Text>
                                   )}
                                 </View>
@@ -510,7 +512,9 @@ export default function ProModalScreen() {
                                 {isCurrentPlan && (
                                   <Text style={styles.currentPlanBadge}>Current</Text>
                                 )}
-                                <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                                <View style={styles.priceContainer}>
+                                  <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                                </View>
                               </View>
                             </View>
                           </LinearGradient>
@@ -522,9 +526,9 @@ export default function ProModalScreen() {
                               </View>
                               <View style={styles.planTextContainer}>
                                 <Text style={styles.planLabel}>{getPlanLabel(packageItem)}</Text>
-                                {helperText && (
+                                {weeklyCalculatedPrice && (
                                   <Text style={styles.planHelper}>
-                                    {helperText}
+                                    {weeklyCalculatedPrice}
                                   </Text>
                                 )}
                               </View>
@@ -533,7 +537,9 @@ export default function ProModalScreen() {
                               {isCurrentPlan && (
                                 <Text style={styles.currentPlanBadge}>Current</Text>
                               )}
-                              <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                              <View style={styles.priceContainer}>
+                                <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                              </View>
                             </View>
                           </View>
                         )}
@@ -857,18 +863,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   planHelper: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 11,
-    fontWeight: "500",
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 10,
+    fontWeight: "400",
+    marginTop: 2,
   },
   planRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
+  priceContainer: {
+    alignItems: "flex-end",
+  },
   planPrice: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     textAlign: "right",
   },
