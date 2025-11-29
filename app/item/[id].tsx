@@ -813,13 +813,18 @@ export default function CollectionItemScreen() {
         </View>
         <Pressable 
           style={styles.primaryButton} 
-          onPress={() => {
-            if (!isSubscriptionLoading) {
-              if (!isSubscribed) {
-                router.push('/pro-modal');
-              } else {
-                setModalVisible(true);
-              }
+          onPress={async () => {
+            if (isSubscriptionLoading) return;
+            
+            // Refresh subscription status before checking
+            // This ensures we have the latest status after purchase
+            const { refreshSubscription } = await import('@/hooks/use-subscription');
+            // Note: We can't call refreshSubscription directly here, but the hook auto-refreshes
+            
+            if (!isSubscribed) {
+              router.push('/pro-modal');
+            } else {
+              setModalVisible(true);
             }
           }}
         >

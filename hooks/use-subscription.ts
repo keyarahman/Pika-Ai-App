@@ -24,6 +24,11 @@ export function useSubscription() {
           const activeEntitlement = info.entitlements.active['pro'];
           // Try to get the product identifier from the entitlement
           const productIdentifier = activeEntitlement.productIdentifier;
+          console.log('Active subscription found:', {
+            productIdentifier,
+            willRenew: activeEntitlement.willRenew,
+            expirationDate: activeEntitlement.expirationDate,
+          });
           setCurrentPlanIdentifier(productIdentifier);
         } else {
           setCurrentPlanIdentifier(null);
@@ -58,6 +63,11 @@ export function useSubscription() {
       if (info.entitlements.active['pro']) {
         const activeEntitlement = info.entitlements.active['pro'];
         const productIdentifier = activeEntitlement.productIdentifier;
+        console.log('Refreshed subscription:', {
+          productIdentifier,
+          willRenew: activeEntitlement.willRenew,
+          expirationDate: activeEntitlement.expirationDate,
+        });
         setCurrentPlanIdentifier(productIdentifier);
       } else {
         setCurrentPlanIdentifier(null);

@@ -3,7 +3,7 @@ import { Video } from "expo-av";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -135,6 +135,16 @@ export default function ProModalScreen() {
         const offering = await getCurrentOffering();
         if (offering && offering.availablePackages.length > 0) {
           const availablePackages = offering.availablePackages;
+          
+          // Debug: Log all packages to see what we're getting
+          console.log('Available packages:', availablePackages.map(pkg => ({
+            identifier: pkg.identifier,
+            productId: pkg.product.identifier,
+            price: pkg.product.priceString,
+            priceValue: pkg.product.price,
+            currency: pkg.product.currencyCode,
+          })));
+          
           setPackages(availablePackages);
           
           // Set default selected plan to yearly if available, otherwise weekly
@@ -147,9 +157,22 @@ export default function ProModalScreen() {
           const weeklyPackage = availablePackages.find(pkg => 
             pkg.identifier === '$rc_weekly' || 
             pkg.identifier === 'negarsapp.pikaapp.pro.weekly' || 
+            pkg.product.identifier === 'negarsapp.pikaapp.pro.weekly' ||
             pkg.identifier.includes('weekly') || 
             pkg.identifier.includes('week')
           );
+          
+          // Debug: Log which weekly package was found
+          if (weeklyPackage) {
+            console.log('Weekly package found:', {
+              identifier: weeklyPackage.identifier,
+              productId: weeklyPackage.product.identifier,
+              price: weeklyPackage.product.priceString,
+              priceValue: weeklyPackage.product.price,
+            });
+          } else {
+            console.warn('Weekly package not found! Available identifiers:', availablePackages.map(p => p.identifier));
+          }
           
           // If user is subscribed, select their current plan, otherwise default to yearly
           if (isSubscribed && currentPlanIdentifier) {
@@ -176,6 +199,13 @@ export default function ProModalScreen() {
 
     fetchOfferings();
   }, [isSubscribed, currentPlanIdentifier]);
+  
+  // Refresh subscription when modal becomes visible/focused
+  useFocusEffect(
+    useCallback(() => {
+      refreshSubscription();
+    }, [refreshSubscription])
+  );
 
   const handleClose = () => {
     // Check if we can go back, if not navigate to tabs (handles first-time app launch)
@@ -200,18 +230,39 @@ export default function ProModalScreen() {
 
     try {
       setIsPurchasing(true);
+      console.log('Purchasing package:', {
+        identifier: selectedPackage.identifier,
+        productId: selectedPackage.product.identifier,
+        price: selectedPackage.product.priceString,
+      });
+      
       const customerInfo = await purchasePackage(selectedPackage);
+      
+      console.log('Purchase completed, customer info:', {
+        hasPro: !!customerInfo.entitlements.active['pro'],
+        activeEntitlements: Object.keys(customerInfo.entitlements.active),
+      });
       
       // Check if purchase was successful
       if (customerInfo.entitlements.active['pro']) {
-        // Refresh subscription status
+        // Refresh subscription status immediately
         await refreshSubscription();
-        Alert.alert('Success', 'Subscription activated successfully!', [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]);
+        
+        // Show success alert
+        Alert.alert(
+          'Success! 🎉',
+          'Your subscription has been activated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Close modal after successful purchase
+                router.back();
+              },
+            },
+          ],
+          { cancelable: false }
+        );
       } else {
         Alert.alert('Success', 'Purchase completed successfully!');
       }
@@ -258,21 +309,34 @@ export default function ProModalScreen() {
   // Format price for display - shows the ACTUAL BILLED AMOUNT (most prominent)
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const product = packageItem.product;
-    const price = product.priceString;
+    const price = product.priceString; // This comes directly from App Store, should be correct
     const identifier = packageItem.identifier.toLowerCase();
+    const productId = product.identifier.toLowerCase();
+    
+    // Debug: Log the price to see what we're getting
+    console.log('Formatting price - Package ID:', identifier, 'Product ID:', productId, 'Price:', price, 'Numeric Price:', product.price);
     
     // For yearly plans, show the ACTUAL YEARLY PRICE (billed amount)
-    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || 
+        identifier.includes('yearly') || identifier.includes('annual') ||
+        productId.includes('yearly') || productId.includes('annual')) {
       // Return the actual billed amount (yearly price)
+      // priceString should already have currency symbol, just add /yr if not present
       if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
         return `${price}/yr`;
       }
       return price;
-    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || 
+               identifier.includes('weekly') || identifier.includes('week') ||
+               productId.includes('weekly') || productId.includes('week')) {
+      // For weekly plans, use the priceString directly (it should already be formatted correctly)
+      // Don't add /wk if it's already in the price string
       if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
         return `${price}/wk`;
       }
-    } else if (identifier.includes('monthly') || identifier.includes('month')) {
+      return price;
+    } else if (identifier.includes('monthly') || identifier.includes('month') ||
+               productId.includes('monthly') || productId.includes('month')) {
       if (!price.toLowerCase().includes('month') && !price.toLowerCase().includes('mo')) {
         return `${price}/mo`;
       }
@@ -439,10 +503,26 @@ export default function ProModalScreen() {
               <View style={styles.plansContainer}>
                 {packages.map((packageItem) => {
                   const isSelected = selectedPlan === packageItem.identifier;
-                  const isCurrentPlan = isSubscribed && (
+                  
+                  // Check if this is the current plan by matching both identifier and product identifier
+                  const isCurrentPlan = isSubscribed && currentPlanIdentifier && (
                     packageItem.identifier === currentPlanIdentifier ||
                     packageItem.product.identifier === currentPlanIdentifier
                   );
+                  
+                  // Debug log for current plan detection
+                  if (isSubscribed && currentPlanIdentifier) {
+                    console.log('Checking plan match:', {
+                      packageIdentifier: packageItem.identifier,
+                      productIdentifier: packageItem.product.identifier,
+                      currentPlanIdentifier,
+                      isMatch: isCurrentPlan,
+                    });
+                  }
+                  
+                  // If user has a current plan, disable selection of that plan
+                  const isDisabled = isCurrentPlan;
+                  
                   const weeklyCalculatedPrice = getWeeklyCalculatedPrice(packageItem);
                   const badgeLabel = hasBadge(packageItem) ? "BEST VALUE" : undefined;
 
@@ -481,11 +561,11 @@ export default function ProModalScreen() {
                           isSelected && styles.planCardSelected,
                         ]}
                         onPress={() => {
-                          if (!isCurrentPlan) {
+                          if (!isDisabled) {
                             setSelectedPlan(packageItem.identifier);
                           }
                         }}
-                        disabled={isCurrentPlan}
+                        disabled={!!isDisabled}
                       >
                         {isSelected ? (
                           <LinearGradient
@@ -516,6 +596,11 @@ export default function ProModalScreen() {
                                   <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
                                 </View>
                               </View>
+                              {isCurrentPlan && (
+                                <View style={styles.currentPlanOverlay}>
+                                  <Text style={styles.currentPlanText}>Active Plan</Text>
+                                </View>
+                              )}
                             </View>
                           </LinearGradient>
                         ) : (
@@ -541,6 +626,11 @@ export default function ProModalScreen() {
                                 <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
                               </View>
                             </View>
+                            {isCurrentPlan && (
+                              <View style={styles.currentPlanOverlay}>
+                                <Text style={styles.currentPlanText}>Active Plan</Text>
+                              </View>
+                            )}
                           </View>
                         )}
                       </Pressable>
@@ -562,17 +652,26 @@ export default function ProModalScreen() {
           {/* Continue Button */}
           {!isLoading && packages.length > 0 && (
             <>
-              {isSubscribed && selectedPlan && (
-                (packages.find(pkg => pkg.identifier === selectedPlan)?.identifier === currentPlanIdentifier ||
-                 packages.find(pkg => pkg.product.identifier === currentPlanIdentifier)?.identifier === selectedPlan) ? (
-                  <View style={styles.currentPlanMessage}>
-                    <Text style={styles.currentPlanMessageText}>You are currently subscribed to this plan</Text>
-                  </View>
-                ) : (
+              {(() => {
+                const selectedPackage = packages.find(pkg => pkg.identifier === selectedPlan);
+                const isSelectedPlanCurrent = isSubscribed && currentPlanIdentifier && selectedPackage && (
+                  selectedPackage.identifier === currentPlanIdentifier ||
+                  selectedPackage.product.identifier === currentPlanIdentifier
+                );
+                
+                if (isSubscribed && isSelectedPlanCurrent) {
+                  return (
+                    <View style={styles.currentPlanMessage}>
+                      <Text style={styles.currentPlanMessageText}>You are currently subscribed to this plan</Text>
+                    </View>
+                  );
+                }
+                
+                return (
                   <Pressable
-                    style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
+                    style={[styles.continueButton, (isPurchasing || !selectedPlan || isSelectedPlanCurrent) && styles.continueButtonDisabled]}
                     onPress={handlePurchase}
-                    disabled={isPurchasing || !selectedPlan}
+                    disabled={!!(isPurchasing || !selectedPlan || isSelectedPlanCurrent)}
                   >
                     <LinearGradient
                       colors={["#EA6198", "#7135FF"]}
@@ -594,35 +693,8 @@ export default function ProModalScreen() {
                       </>
                     )}
                   </Pressable>
-                )
-              )}
-              {!isSubscribed && (
-                <Pressable
-                  style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
-                  onPress={handlePurchase}
-                  disabled={isPurchasing || !selectedPlan}
-                >
-                  <LinearGradient
-                    colors={["#EA6198", "#7135FF"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.continueButtonGradient}
-                  />
-                  {isPurchasing ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <Text style={styles.continueButtonText}>Subscribe</Text>
-                      <Ionicons
-                        name="arrow-forward"
-                        size={20}
-                        color="#FFFFFF"
-                        style={styles.continueArrow}
-                      />
-                    </>
-                  )}
-                </Pressable>
-              )}
+                );
+              })()}
 
               {/* Footer Links */}
               <View style={styles.footerLinks}>
@@ -802,6 +874,7 @@ const styles = StyleSheet.create({
   planCard: {
     borderRadius: 50,
     overflow: "hidden",
+    position: "relative",
   },
   planCardGradient: {
     borderRadius: 50,
@@ -902,6 +975,22 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     fontSize: 14,
     fontWeight: "600",
+  },
+  currentPlanOverlay: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(76, 175, 80, 0.9)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    zIndex: 10,
+  },
+  currentPlanText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   billingText: {
     color: "rgba(255,255,255,0.6)",

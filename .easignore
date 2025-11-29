@@ -1,0 +1,49 @@
+# EAS Build ignore file
+# Files and directories listed here will be excluded from the build
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.log
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Build artifacts
+build/
+dist/
+.expo/
+.expo-shared/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.pem
+*.p12
+*.key
+*.cert
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+!README.md
+SUBSCRIPTION_TESTING.md
+
+# Scripts (optional - remove if you need them in build)
+scripts/
+
