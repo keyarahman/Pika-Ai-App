@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -105,7 +105,7 @@ export default function AllItemsScreen() {
     });
   }, []);
 
-  const renderItem = ({ item }: { item: CollectionItem }) => {
+  const renderItem = useCallback(({ item }: { item: CollectionItem }) => {
     const isLoading = loadingImages.has(item.id);
     return (
       <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
@@ -115,6 +115,10 @@ export default function AllItemsScreen() {
           onLoadStart={() => handleImageLoadStart(item.id)}
           onLoadEnd={() => handleImageLoadEnd(item.id)}
           onError={() => handleImageLoadEnd(item.id)}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          transition={200}
+          placeholderContentFit="cover"
         />
         {isLoading && (
           <View style={styles.imageLoadingOverlay}>
@@ -138,7 +142,9 @@ export default function AllItemsScreen() {
         </View>
       </Pressable>
     );
-  };
+  }, [loadingImages, handlePressItem, handleImageLoadStart, handleImageLoadEnd]);
+
+  const keyExtractor = useCallback((item: CollectionItem) => item.id, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -155,10 +161,15 @@ export default function AllItemsScreen() {
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.columnWrapper}
         data={collectionData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         numColumns={NUM_COLUMNS}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        updateCellsBatchingPeriod={50}
       />
     </SafeAreaView>
   );

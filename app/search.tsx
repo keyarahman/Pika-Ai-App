@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Pressable,
@@ -28,10 +29,14 @@ const CARD_WIDTH =
     ITEM_SPACING * (NUM_COLUMNS - 1)) /
   NUM_COLUMNS;
 
+const ITEMS_PER_PAGE = 10;
+
 export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   // Use merged all collections list for search
   const allItems = useMemo(() => getAllCollectionsItems(), []);
@@ -50,6 +55,18 @@ export default function SearchScreen() {
     );
   }, [searchQuery, allItems]);
 
+  // Reset displayed count when search query changes
+  useEffect(() => {
+    setDisplayedCount(ITEMS_PER_PAGE);
+  }, [searchQuery]);
+
+  // Get items to display (paginated)
+  const displayedItems = useMemo(() => {
+    return filteredItems.slice(0, displayedCount);
+  }, [filteredItems, displayedCount]);
+
+  const hasMoreItems = displayedCount < filteredItems.length;
+
   const handlePressItem = useCallback(
     (item: CollectionItem) => {
       router.push({
@@ -67,26 +84,77 @@ export default function SearchScreen() {
     [router]
   );
 
-  const renderItem = ({ item }: { item: CollectionItem }) => (
-    <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
-      <View style={styles.cardOverlay} />
-      <View style={styles.cardContent}>
-        {item.badge && (
-          <View
-            style={[
-              styles.badge,
-              item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
-            ]}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
+  const handleLoadMore = useCallback(() => {
+    if (hasMoreItems && displayedCount < filteredItems.length) {
+      setDisplayedCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filteredItems.length));
+    }
+  }, [hasMoreItems, displayedCount, filteredItems.length]);
+
+  const handleImageLoadStart = useCallback((itemId: string) => {
+    setLoadingImages((prev) => {
+      if (prev.has(itemId)) return prev;
+      return new Set(prev).add(itemId);
+    });
+  }, []);
+
+  const handleImageLoadEnd = useCallback((itemId: string) => {
+    setLoadingImages((prev) => {
+      if (!prev.has(itemId)) return prev;
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+  }, []);
+
+  const renderItem = useCallback(({ item }: { item: CollectionItem }) => {
+    const isLoading = loadingImages.has(item.id);
+    return (
+      <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.cardImage}
+          onLoadStart={() => handleImageLoadStart(item.id)}
+          onLoadEnd={() => handleImageLoadEnd(item.id)}
+          onError={() => handleImageLoadEnd(item.id)}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          transition={200}
+          placeholderContentFit="cover"
+        />
+        {isLoading && (
+          <View style={styles.imageLoadingOverlay}>
+            <ActivityIndicator size="small" color="#9BA0BC" />
           </View>
         )}
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
+        <View style={styles.cardOverlay} />
+        <View style={styles.cardContent}>
+          {item.badge && (
+            <View
+              style={[
+                styles.badge,
+                item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
+              ]}>
+              <Text style={styles.badgeText}>{item.badge}</Text>
+            </View>
+          )}
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+        </View>
+      </Pressable>
+    );
+  }, [loadingImages, handlePressItem, handleImageLoadStart, handleImageLoadEnd]);
+
+  const keyExtractor = useCallback((item: CollectionItem) => item.id, []);
+
+  const renderFooter = useCallback(() => {
+    if (!hasMoreItems) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#9BA0BC" />
       </View>
-    </Pressable>
-  );
+    );
+  }, [hasMoreItems]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -128,11 +196,19 @@ export default function SearchScreen() {
         <FlatList
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
-          data={filteredItems}
-          keyExtractor={(item) => item.id}
+          data={displayedItems}
+          keyExtractor={keyExtractor}
           numColumns={NUM_COLUMNS}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          removeClippedSubviews={true}
+          initialNumToRender={ITEMS_PER_PAGE}
+          maxToRenderPerBatch={ITEMS_PER_PAGE}
+          windowSize={5}
+          updateCellsBatchingPeriod={50}
         />
       )}
     </SafeAreaView>
@@ -261,6 +337,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  imageLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 13, 22, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

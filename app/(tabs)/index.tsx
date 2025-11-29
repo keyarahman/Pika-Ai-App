@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -1310,7 +1310,8 @@ export default function HomeScreen() {
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}>
 
         <View style={styles.featureCarousel}>
           <ScrollView
@@ -1344,7 +1345,14 @@ export default function HomeScreen() {
                     });
                   }
                 }}>
-                <Image source={{ uri: item.image }} style={styles.featureImage} />
+                <Image 
+                  source={{ uri: item.image }} 
+                  style={styles.featureImage}
+                  cachePolicy="memory-disk"
+                  contentFit="cover"
+                  transition={200}
+                  placeholderContentFit="cover"
+                />
                 <View style={styles.featureOverlay} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureTitle}>{item.title}</Text>
@@ -1393,7 +1401,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Popular"
           items={viralItems}
           limit={6}
@@ -1408,7 +1416,7 @@ export default function HomeScreen() {
           }
           onPressItem={handlePressCollectionItem}
         />
-        <CollectionSection
+        <MemoizedCollectionSection
           title="AI Romance"
           items={aiRomanceItems}
           limit={6}
@@ -1424,7 +1432,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Style Fusion"
           items={aiStyleItems}
           limit={6}
@@ -1440,7 +1448,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Beat Motion"
           items={aiDancingItems}
           limit={6}
@@ -1456,7 +1464,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Avatar"
           items={aiCharacterItems}
           limit={6}
@@ -1472,7 +1480,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Fashion"
           items={fashionItems}
           limit={6}
@@ -1488,7 +1496,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Festival Vibe"
           items={festivalItems}
           limit={6}
@@ -1504,7 +1512,7 @@ export default function HomeScreen() {
           onPressItem={handlePressCollectionItem}
         />
 
-        <CollectionSection
+        <MemoizedCollectionSection
           title="Giggle World"
           items={aiFunnyItems}
           limit={6}
@@ -1534,68 +1542,127 @@ type CollectionSectionProps = {
   onPressItem?: (item: CollectionItem) => void;
 };
 
+// Memoized collection card component
+const CollectionCard = React.memo(({ 
+  item, 
+  isLoading, 
+  onLoadStart, 
+  onLoadEnd, 
+  onPress 
+}: { 
+  item: CollectionItem; 
+  isLoading: boolean;
+  onLoadStart: () => void;
+  onLoadEnd: () => void;
+  onPress: () => void;
+}) => {
+  return (
+    <Pressable style={styles.collectionCard} onPress={onPress}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.collectionImage}
+        onLoadStart={onLoadStart}
+        onLoadEnd={onLoadEnd}
+        onError={onLoadEnd}
+        cachePolicy="memory-disk"
+        contentFit="cover"
+        transition={200}
+        placeholderContentFit="cover"
+      />
+      {isLoading && (
+        <View style={styles.imageLoadingOverlay}>
+          <ActivityIndicator size="small" color="#9BA0BC" />
+        </View>
+      )}
+      <View style={styles.cardOverlay} />
+      <View style={styles.cardContent}>
+        {item.badge && (
+          <View
+            style={[
+              styles.badge,
+              item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
+            ]}>
+            <Text style={styles.badgeText}>{item.badge}</Text>
+          </View>
+        )}
+        <Text style={styles.collectionTitle}>{item.title}</Text>
+      </View>
+    </Pressable>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better performance
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.image === nextProps.item.image &&
+    prevProps.item.title === nextProps.item.title &&
+    prevProps.item.badge === nextProps.item.badge &&
+    prevProps.isLoading === nextProps.isLoading
+  );
+});
+
+CollectionCard.displayName = 'CollectionCard';
+
 function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: CollectionSectionProps) {
-  const displayItems = limit ? items.slice(0, limit) : items;
+  const displayItems = useMemo(() => {
+    return limit ? items.slice(0, limit) : items;
+  }, [items, limit]);
+  
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   const handleImageLoadStart = useCallback((itemId: string) => {
-    setLoadingImages((prev) => new Set(prev).add(itemId));
+    setLoadingImages((prev) => {
+      if (prev.has(itemId)) return prev;
+      return new Set(prev).add(itemId);
+    });
   }, []);
 
   const handleImageLoadEnd = useCallback((itemId: string) => {
     setLoadingImages((prev) => {
+      if (!prev.has(itemId)) return prev;
       const next = new Set(prev);
       next.delete(itemId);
       return next;
     });
   }, []);
 
+  const handleSeeAllPress = useCallback(() => {
+    if (onSeeAll) {
+      onSeeAll(title, items);
+    }
+  }, [onSeeAll, title, items]);
+
+  const handleItemPress = useCallback((item: CollectionItem) => {
+    onPressItem?.(item);
+  }, [onPressItem]);
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{title}</Text>
         {onSeeAll && (
-          <Pressable hitSlop={8} onPress={() => onSeeAll(title, items)}>
+          <Pressable hitSlop={8} onPress={handleSeeAllPress}>
             <Text style={styles.sectionLink}>See All</Text>
           </Pressable>
         )}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        removeClippedSubviews={true}
+      >
         <View style={styles.sectionRow}>
           {displayItems.map((item) => {
             const isLoading = loadingImages.has(item.id);
             return (
-              <Pressable
+              <CollectionCard
                 key={item.id}
-                style={styles.collectionCard}
-                onPress={() => onPressItem?.(item)}>
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.collectionImage}
-                  onLoadStart={() => handleImageLoadStart(item.id)}
-                  onLoadEnd={() => handleImageLoadEnd(item.id)}
-                  onError={() => handleImageLoadEnd(item.id)}
-                />
-                {isLoading && (
-                  <View style={styles.imageLoadingOverlay}>
-                    <ActivityIndicator size="small" color="#9BA0BC" />
-                  </View>
-                )}
-                <View style={styles.cardOverlay} />
-                <View style={styles.cardContent}>
-                  {item.badge && (
-                    <View
-                      style={[
-                        styles.badge,
-                        item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
-                      ]}>
-                      <Text style={styles.badgeText}>{item.badge}</Text>
-                    </View>
-                  )}
-                  <Text style={styles.collectionTitle}>{item.title}</Text>
-                </View>
-              </Pressable>
+                item={item}
+                isLoading={isLoading}
+                onLoadStart={() => handleImageLoadStart(item.id)}
+                onLoadEnd={() => handleImageLoadEnd(item.id)}
+                onPress={() => handleItemPress(item)}
+              />
             );
           })}
         </View>
@@ -1603,6 +1670,19 @@ function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: Colle
     </View>
   );
 }
+
+// Memoize CollectionSection to prevent unnecessary re-renders
+const MemoizedCollectionSection = React.memo(CollectionSection, (prevProps, nextProps) => {
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.items === nextProps.items &&
+    prevProps.limit === nextProps.limit &&
+    prevProps.onSeeAll === nextProps.onSeeAll &&
+    prevProps.onPressItem === nextProps.onPressItem
+  );
+});
+
+MemoizedCollectionSection.displayName = 'CollectionSection';
 
 const styles = StyleSheet.create({
   safeArea: {
