@@ -218,7 +218,7 @@ export default function ExploreScreen() {
             onEndFrameChange={setEndFrame}
             onPromptChange={setFramesPrompt}
             onPickImage={handlePickImage}
-            disabled={true}
+          // disabled={true}
           />
         );
       default:
@@ -235,30 +235,7 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
 
-        <View style={styles.modeRow}>
-          {MODE_OPTIONS.map((option) => {
-            const isActive = option.id === activeMode;
-            return (
-              <Pressable
-                key={option.id}
-                onPress={() => setActiveMode(option.id)}
-                style={[styles.modeButton, isActive && styles.modeButtonActive]}
-                android_ripple={{ color: 'rgba(113, 53, 255, 0.2)' }}>
-                {isActive ? (
-                  <LinearGradient
-                    colors={['#EA6198', '#7135FF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                ) : null}
-                <Text style={[styles.modeLabel, isActive && styles.modeLabelActive]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+
 
         {renderContent()}
 
@@ -267,7 +244,7 @@ export default function ExploreScreen() {
           style={[
             styles.generateButton,
             (isGenerating || activeMode === 'text-to-video' || activeMode === 'frames') &&
-              styles.generateButtonDisabled,
+            styles.generateButtonDisabled,
           ]}
           onPress={handleGenerateVideo}
           disabled={isGenerating || activeMode === 'text-to-video' || activeMode === 'frames'}
