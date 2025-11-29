@@ -21,6 +21,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { useSubscription } from "@/hooks/use-subscription";
 import {
   getCurrentOffering,
   initializeRevenueCat,
@@ -60,6 +61,7 @@ export default function ProModalScreen() {
   const insets = useSafeAreaInsets();
   const carouselScrollRef = useRef<ScrollView>(null);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
+  const { isSubscribed, currentPlanIdentifier, refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -149,7 +151,17 @@ export default function ProModalScreen() {
             pkg.identifier.includes('week')
           );
           
-          setSelectedPlan(yearlyPackage?.identifier || weeklyPackage?.identifier || availablePackages[0].identifier);
+          // If user is subscribed, select their current plan, otherwise default to yearly
+          if (isSubscribed && currentPlanIdentifier) {
+            // Try to match current plan identifier with available packages
+            const currentPackage = availablePackages.find(pkg => 
+              pkg.identifier === currentPlanIdentifier ||
+              pkg.product.identifier === currentPlanIdentifier
+            );
+            setSelectedPlan(currentPackage?.identifier || yearlyPackage?.identifier || weeklyPackage?.identifier || availablePackages[0].identifier);
+          } else {
+            setSelectedPlan(yearlyPackage?.identifier || weeklyPackage?.identifier || availablePackages[0].identifier);
+          }
         } else {
           // Fallback to hardcoded plans if no offerings available
           console.warn('No RevenueCat offerings available, using fallback plans');
@@ -163,7 +175,7 @@ export default function ProModalScreen() {
     };
 
     fetchOfferings();
-  }, []);
+  }, [isSubscribed, currentPlanIdentifier]);
 
   const handleClose = () => {
     // Check if we can go back, if not navigate to tabs (handles first-time app launch)
@@ -192,6 +204,8 @@ export default function ProModalScreen() {
       
       // Check if purchase was successful
       if (customerInfo.entitlements.active['pro']) {
+        // Refresh subscription status
+        await refreshSubscription();
         Alert.alert('Success', 'Subscription activated successfully!', [
           {
             text: 'OK',
@@ -222,6 +236,8 @@ export default function ProModalScreen() {
       const customerInfo = await restorePurchases();
       
       if (customerInfo.entitlements.active['pro']) {
+        // Refresh subscription status
+        await refreshSubscription();
         Alert.alert('Success', 'Purchases restored successfully!', [
           {
             text: 'OK',
@@ -421,6 +437,10 @@ export default function ProModalScreen() {
               <View style={styles.plansContainer}>
                 {packages.map((packageItem) => {
                   const isSelected = selectedPlan === packageItem.identifier;
+                  const isCurrentPlan = isSubscribed && (
+                    packageItem.identifier === currentPlanIdentifier ||
+                    packageItem.product.identifier === currentPlanIdentifier
+                  );
                   const helperText = getPlanHelper(packageItem);
                   const badgeLabel = hasBadge(packageItem) ? "BEST VALUE" : undefined;
 
@@ -458,7 +478,12 @@ export default function ProModalScreen() {
                           styles.planCard,
                           isSelected && styles.planCardSelected,
                         ]}
-                        onPress={() => setSelectedPlan(packageItem.identifier)}
+                        onPress={() => {
+                          if (!isCurrentPlan) {
+                            setSelectedPlan(packageItem.identifier);
+                          }
+                        }}
+                        disabled={isCurrentPlan}
                       >
                         {isSelected ? (
                           <LinearGradient
@@ -481,7 +506,12 @@ export default function ProModalScreen() {
                                   )}
                                 </View>
                               </View>
-                              <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                              <View style={styles.planRight}>
+                                {isCurrentPlan && (
+                                  <Text style={styles.currentPlanBadge}>Current</Text>
+                                )}
+                                <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                              </View>
                             </View>
                           </LinearGradient>
                         ) : (
@@ -499,7 +529,12 @@ export default function ProModalScreen() {
                                 )}
                               </View>
                             </View>
-                            <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                            <View style={styles.planRight}>
+                              {isCurrentPlan && (
+                                <Text style={styles.currentPlanBadge}>Current</Text>
+                              )}
+                              <Text style={styles.planPrice}>{formatPrice(packageItem)}</Text>
+                            </View>
                           </View>
                         )}
                       </Pressable>
@@ -521,31 +556,67 @@ export default function ProModalScreen() {
           {/* Continue Button */}
           {!isLoading && packages.length > 0 && (
             <>
-              <Pressable
-                style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
-                onPress={handlePurchase}
-                disabled={isPurchasing || !selectedPlan}
-              >
-                <LinearGradient
-                  colors={["#EA6198", "#7135FF"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.continueButtonGradient}
-                />
-                {isPurchasing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+              {isSubscribed && selectedPlan && (
+                (packages.find(pkg => pkg.identifier === selectedPlan)?.identifier === currentPlanIdentifier ||
+                 packages.find(pkg => pkg.product.identifier === currentPlanIdentifier)?.identifier === selectedPlan) ? (
+                  <View style={styles.currentPlanMessage}>
+                    <Text style={styles.currentPlanMessageText}>You are currently subscribed to this plan</Text>
+                  </View>
                 ) : (
-                  <>
-                    <Text style={styles.continueButtonText}>Subscribe</Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={20}
-                      color="#FFFFFF"
-                      style={styles.continueArrow}
+                  <Pressable
+                    style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
+                    onPress={handlePurchase}
+                    disabled={isPurchasing || !selectedPlan}
+                  >
+                    <LinearGradient
+                      colors={["#EA6198", "#7135FF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.continueButtonGradient}
                     />
-                  </>
-                )}
-              </Pressable>
+                    {isPurchasing ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Text style={styles.continueButtonText}>Subscribe</Text>
+                        <Ionicons
+                          name="arrow-forward"
+                          size={20}
+                          color="#FFFFFF"
+                          style={styles.continueArrow}
+                        />
+                      </>
+                    )}
+                  </Pressable>
+                )
+              )}
+              {!isSubscribed && (
+                <Pressable
+                  style={[styles.continueButton, (isPurchasing || !selectedPlan) && styles.continueButtonDisabled]}
+                  onPress={handlePurchase}
+                  disabled={isPurchasing || !selectedPlan}
+                >
+                  <LinearGradient
+                    colors={["#EA6198", "#7135FF"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.continueButtonGradient}
+                  />
+                  {isPurchasing ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.continueButtonText}>Subscribe</Text>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={20}
+                        color="#FFFFFF"
+                        style={styles.continueArrow}
+                      />
+                    </>
+                  )}
+                </Pressable>
+              )}
 
               {/* Footer Links */}
               <View style={styles.footerLinks}>
@@ -790,11 +861,37 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "500",
   },
+  planRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   planPrice: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
     textAlign: "right",
+  },
+  currentPlanBadge: {
+    color: "#4CAF50",
+    fontSize: 12,
+    fontWeight: "700",
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  currentPlanMessage: {
+    backgroundColor: "rgba(76, 175, 80, 0.15)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  currentPlanMessageText: {
+    color: "#4CAF50",
+    fontSize: 14,
+    fontWeight: "600",
   },
   billingText: {
     color: "rgba(255,255,255,0.6)",

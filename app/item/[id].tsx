@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { API_BASE_URL, API_KEY, VIDEO_POLL_INTERVAL } from '@/constants/api';
+import { useSubscription } from '@/hooks/use-subscription';
 import { useGeneratedVideos } from '@/store/generated-videos';
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
@@ -60,6 +61,7 @@ export default function CollectionItemScreen() {
     videUrl?: string;
   }>();
   const { addVideo: addGeneratedVideo } = useGeneratedVideos();
+  const { isSubscribed, isLoading: isSubscriptionLoading } = useSubscription();
   const { title, image, prompt, templateId, videoUrl } = useMemo(() => {
     const resolvedTitle = typeof params.title === 'string' ? params.title : 'Collection';
     const resolvedPrompt = typeof params.prompt === 'string' ? params.prompt : resolvedTitle;
@@ -809,7 +811,18 @@ export default function CollectionItemScreen() {
             ]}
           />
         </View>
-        <Pressable style={styles.primaryButton} onPress={() => setModalVisible(true)}>
+        <Pressable 
+          style={styles.primaryButton} 
+          onPress={() => {
+            if (!isSubscriptionLoading) {
+              if (!isSubscribed) {
+                router.push('/pro-modal');
+              } else {
+                setModalVisible(true);
+              }
+            }
+          }}
+        >
           <LinearGradient
             colors={["#EA6198", "#5B5BFF"]}
             start={{ x: 0, y: 0 }}

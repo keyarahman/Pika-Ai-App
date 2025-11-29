@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FramesSection } from '@/components/frames-section';
 import { ImageToVideoSection } from '@/components/image-to-video-section';
 import { TextToVideoSection } from '@/components/text-to-video-section';
+import { useSubscription } from '@/hooks/use-subscription';
 import { useGeneratedVideos } from '@/store/generated-videos';
 import { pickImageFromLibrary, takePhotoWithCamera } from '@/utils/image-picker';
 import { uploadImage } from '@/utils/image-upload';
@@ -27,6 +28,7 @@ export default function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { addVideo } = useGeneratedVideos();
+  const { isSubscribed, isLoading: isSubscriptionLoading } = useSubscription();
   const [activeMode, setActiveMode] = useState<ModeOptionId>('image-to-video');
   const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [startFrame, setStartFrame] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -151,6 +153,11 @@ export default function ExploreScreen() {
   }, [startFrame, endFrame, framesPrompt]);
 
   const handleGenerateVideo = useCallback(() => {
+    if (!isSubscriptionLoading && !isSubscribed) {
+      router.push('/pro-modal');
+      return;
+    }
+    
     switch (activeMode) {
       case 'image-to-video':
         handleGenerateImageToVideo();
@@ -162,7 +169,7 @@ export default function ExploreScreen() {
         handleGenerateFrames();
         break;
     }
-  }, [activeMode, handleGenerateImageToVideo, handleGenerateTextToVideo, handleGenerateFrames]);
+  }, [activeMode, handleGenerateImageToVideo, handleGenerateTextToVideo, handleGenerateFrames, isSubscribed, isSubscriptionLoading, router]);
 
   // Handle success modal OK button
   const handleSuccessModalOK = useCallback(() => {

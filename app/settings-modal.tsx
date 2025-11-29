@@ -1,27 +1,58 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { Share } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import {
   Pressable,
-  ScrollView,
-  StyleSheet,
+  ScrollView, Share, StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useSubscription } from '@/hooks/use-subscription';
 import { PRO_PLANS } from './(tabs)/index';
 
 export default function SettingsModal() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isSubscribed, currentPlanIdentifier, customerInfo } = useSubscription();
 
   const handleUpgrade = () => {
     router.replace('/pro-modal');
+  };
+
+  // Get plan label from identifier
+  const getPlanLabel = (identifier: string | null): string => {
+    if (!identifier) return '';
+    const id = identifier.toLowerCase();
+    if (id.includes('yearly') || id.includes('annual') || id === '$rc_annual') {
+      return 'Yearly';
+    } else if (id.includes('weekly') || id.includes('week') || id === '$rc_weekly') {
+      return 'Weekly';
+    } else if (id.includes('monthly') || id.includes('month')) {
+      return 'Monthly';
+    }
+    return 'Pro';
+  };
+
+  // Get subscription expiry date
+  const getExpiryDate = (): string | null => {
+    if (!customerInfo?.entitlements.active['pro']) return null;
+    const expiryDate = customerInfo.entitlements.active['pro'].expirationDate;
+    if (!expiryDate) return null;
+    try {
+      const date = new Date(expiryDate);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch {
+      return null;
+    }
   };
 
   const handlePrivacyPolicy = async () => {
@@ -66,24 +97,45 @@ export default function SettingsModal() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Account</Text>
 
-            <Pressable style={styles.row} onPress={handleUpgrade}>
-              <View style={styles.rowIcon}>
-                <LinearGradient
-                  colors={['#EA6198', '#5B5BFF']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <Ionicons name="sparkles" size={18} color="#fff" />
-              </View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowTitle}>Upgrade to Pro</Text>
-                <Text style={styles.rowSubtitle}>
-                  {PRO_PLANS[PRO_PLANS.length - 1].price} • {PRO_PLANS[PRO_PLANS.length - 1].helper}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#77759A" />
-            </Pressable>
+            {isSubscribed ? (
+              <Pressable style={styles.row} onPress={handleUpgrade}>
+                <View style={styles.rowIcon}>
+                  <LinearGradient
+                    colors={['#4CAF50', '#45A049']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                </View>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowTitle}>Pro Subscription Active</Text>
+                  <Text style={styles.rowSubtitle}>
+                    {getPlanLabel(currentPlanIdentifier)} Plan{getExpiryDate() ? ` • Expires ${getExpiryDate()}` : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#77759A" />
+              </Pressable>
+            ) : (
+              <Pressable style={styles.row} onPress={handleUpgrade}>
+                <View style={styles.rowIcon}>
+                  <LinearGradient
+                    colors={['#EA6198', '#5B5BFF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Ionicons name="sparkles" size={18} color="#fff" />
+                </View>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowTitle}>Upgrade to Pro</Text>
+                  <Text style={styles.rowSubtitle}>
+                    {PRO_PLANS[PRO_PLANS.length - 1].price} • {PRO_PLANS[PRO_PLANS.length - 1].helper}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#77759A" />
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.section}>
