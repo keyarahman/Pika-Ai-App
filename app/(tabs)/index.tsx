@@ -1536,6 +1536,19 @@ type CollectionSectionProps = {
 
 function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: CollectionSectionProps) {
   const displayItems = limit ? items.slice(0, limit) : items;
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+
+  const handleImageLoadStart = useCallback((itemId: string) => {
+    setLoadingImages((prev) => new Set(prev).add(itemId));
+  }, []);
+
+  const handleImageLoadEnd = useCallback((itemId: string) => {
+    setLoadingImages((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+  }, []);
 
   return (
     <View style={styles.section}>
@@ -1550,27 +1563,41 @@ function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: Colle
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.sectionRow}>
-          {displayItems.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.collectionCard}
-              onPress={() => onPressItem?.(item)}>
-              <Image source={{ uri: item.image }} style={styles.collectionImage} />
-              <View style={styles.cardOverlay} />
-              <View style={styles.cardContent}>
-                {item.badge && (
-                  <View
-                    style={[
-                      styles.badge,
-                      item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
-                    ]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
+          {displayItems.map((item) => {
+            const isLoading = loadingImages.has(item.id);
+            return (
+              <Pressable
+                key={item.id}
+                style={styles.collectionCard}
+                onPress={() => onPressItem?.(item)}>
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.collectionImage}
+                  onLoadStart={() => handleImageLoadStart(item.id)}
+                  onLoadEnd={() => handleImageLoadEnd(item.id)}
+                  onError={() => handleImageLoadEnd(item.id)}
+                />
+                {isLoading && (
+                  <View style={styles.imageLoadingOverlay}>
+                    <ActivityIndicator size="small" color="#9BA0BC" />
                   </View>
                 )}
-                <Text style={styles.collectionTitle}>{item.title}</Text>
-              </View>
-            </Pressable>
-          ))}
+                <View style={styles.cardOverlay} />
+                <View style={styles.cardContent}>
+                  {item.badge && (
+                    <View
+                      style={[
+                        styles.badge,
+                        item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
+                      ]}>
+                      <Text style={styles.badgeText}>{item.badge}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.collectionTitle}>{item.title}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -1762,6 +1789,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 'auto',
+  },
+  imageLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 13, 22, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   bottomSpacer: {
     height: 0,

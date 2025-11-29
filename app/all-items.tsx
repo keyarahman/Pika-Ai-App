@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Pressable,
@@ -38,6 +39,7 @@ export default function AllItemsScreen() {
   }>();
   const headerTitle =
     typeof title === 'string' && title.trim().length > 0 ? title : 'All Items';
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   // Parse items from params or fallback to default collections
   const collectionData = useMemo(() => {
@@ -91,26 +93,52 @@ export default function AllItemsScreen() {
     [router]
   );
 
-  const renderItem = ({ item }: { item: CollectionItem }) => (
-    <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
-      <View style={styles.cardOverlay} />
-      <View style={styles.cardContent}>
-        {item.badge && (
-          <View
-            style={[
-              styles.badge,
-              item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
-            ]}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
+  const handleImageLoadStart = useCallback((itemId: string) => {
+    setLoadingImages((prev) => new Set(prev).add(itemId));
+  }, []);
+
+  const handleImageLoadEnd = useCallback((itemId: string) => {
+    setLoadingImages((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+  }, []);
+
+  const renderItem = ({ item }: { item: CollectionItem }) => {
+    const isLoading = loadingImages.has(item.id);
+    return (
+      <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.cardImage}
+          onLoadStart={() => handleImageLoadStart(item.id)}
+          onLoadEnd={() => handleImageLoadEnd(item.id)}
+          onError={() => handleImageLoadEnd(item.id)}
+        />
+        {isLoading && (
+          <View style={styles.imageLoadingOverlay}>
+            <ActivityIndicator size="small" color="#9BA0BC" />
           </View>
         )}
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-      </View>
-    </Pressable>
-  );
+        <View style={styles.cardOverlay} />
+        <View style={styles.cardContent}>
+          {item.badge && (
+            <View
+              style={[
+                styles.badge,
+                item.badge === 'Hot' ? styles.badgeHot : styles.badgeNew,
+              ]}>
+              <Text style={styles.badgeText}>{item.badge}</Text>
+            </View>
+          )}
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -217,6 +245,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: 'auto',
+  },
+  imageLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 13, 22, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
 });
 

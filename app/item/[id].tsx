@@ -89,6 +89,7 @@ export default function CollectionItemScreen() {
   );
   const [videoResult, setVideoResult] = useState<VideoResult | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -118,11 +119,15 @@ export default function CollectionItemScreen() {
   // Update video source when videoUrl changes
   useEffect(() => {
     if (videoUrl) {
+      setVideoLoading(true);
       setVideoProgress(0);
       progressAnim.setValue(0);
       videoPlayer.replaceAsync({ uri: videoUrl }).catch((error) => {
         console.warn('Failed to load video', error);
+        setVideoLoading(false);
       });
+    } else {
+      setVideoLoading(false);
     }
   }, [videoUrl, videoPlayer, progressAnim]);
 
@@ -135,6 +140,10 @@ export default function CollectionItemScreen() {
       const duration = videoPlayer.duration;
 
       if (duration > 0) {
+        // Video has loaded, hide loading indicator
+        if (videoLoading) {
+          setVideoLoading(false);
+        }
         setVideoDuration(duration);
         const progress = Math.min(Math.max(currentTime / duration, 0), 1);
         setVideoProgress(progress);
@@ -152,7 +161,7 @@ export default function CollectionItemScreen() {
     return () => {
       clearInterval(interval);
     };
-  }, [videoUrl, videoPlayer, progressAnim]);
+  }, [videoUrl, videoPlayer, progressAnim, videoLoading]);
 
   // Pause video when screen loses focus
   useFocusEffect(
@@ -745,12 +754,19 @@ export default function CollectionItemScreen() {
 
       <View style={styles.mediaContainer}>
         {videoUrl ? (
-          <VideoView
-            player={videoPlayer}
-            style={styles.media}
-            contentFit="cover"
-            nativeControls={false}
-          />
+          <>
+            <VideoView
+              player={videoPlayer}
+              style={styles.media}
+              contentFit="cover"
+              nativeControls={false}
+            />
+            {videoLoading && (
+              <View style={styles.imageLoadingOverlay}>
+                <ActivityIndicator size="large" color="#FFFFFF" />
+              </View>
+            )}
+          </>
         ) : image ? (
           <>
             <Image
