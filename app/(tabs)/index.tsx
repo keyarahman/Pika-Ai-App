@@ -1394,7 +1394,7 @@ export default function HomeScreen() {
         </View>
 
         <CollectionSection
-          title="Viral"
+          title="Popular"
           items={viralItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
@@ -1425,7 +1425,7 @@ export default function HomeScreen() {
         />
 
         <CollectionSection
-          title="AI Style"
+          title="Style Fusion"
           items={aiStyleItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
@@ -1441,7 +1441,7 @@ export default function HomeScreen() {
         />
 
         <CollectionSection
-          title="AI Dancing"
+          title="Beat Motion"
           items={aiDancingItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
@@ -1457,7 +1457,7 @@ export default function HomeScreen() {
         />
 
         <CollectionSection
-          title="AI Character"
+          title="Avatar"
           items={aiCharacterItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
@@ -1489,7 +1489,7 @@ export default function HomeScreen() {
         />
 
         <CollectionSection
-          title="Festival"
+          title="Festival Vibe"
           items={festivalItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
@@ -1505,7 +1505,7 @@ export default function HomeScreen() {
         />
 
         <CollectionSection
-          title="AI Funny"
+          title="Giggle World"
           items={aiFunnyItems}
           limit={6}
           onSeeAll={(sectionTitle, sectionItems) =>
