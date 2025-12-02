@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AI_DANCING_ITEMS,
-  AI_ROMANCE_ITEMS,
+  // AI_ROMANCE_ITEMS, // Commented out for App Store review - intimate content removed
   AI_STYLE_ITEMS,
   CollectionItem,
   VIRAL_ITEMS,

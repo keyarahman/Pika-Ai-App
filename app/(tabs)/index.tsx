@@ -1247,16 +1247,28 @@ export default function HomeScreen() {
         videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb_muscle_250914.mp4',
       },
       {
-        id: 'officer-crush',
-        title: 'Officer Crush',
-        subtitle: 'Become the ultimate officer!',
+        id: 'born-to-barbie',
+        title: 'Born to Barbie',
+        subtitle: 'Born to Barbie',
         cta: 'Try Now',
+        templateId: 335261821526784,
         image:
-          'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.gif?x-oss-process=style/cover-webp',
-        prompt: 'Officer Crush',
-        templateId: 353279785150016,
-        videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.mp4',
+          'https://media.pixverse.ai/asset%2Ftemplate%2Fweb-babii-251109.gif?x-oss-process=style/cover-webp',
+        videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fweb-babii-251109.mp4',
       },
+      // Commented out for App Store review
+      // {
+      //   id: 'officer-crush',
+      //   title: 'Officer Crush',
+      //   subtitle: 'Become the ultimate officer!',
+      //   cta: 'Try Now',
+      //   image:
+      //     'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.gif?x-oss-process=style/cover-webp',
+      //   prompt: 'Officer Crush',
+      //   templateId: 353279785150016,
+      //   videUrl: 'https://media.pixverse.ai/asset%2Ftemplate%2Fapi_officer.mp4',
+      // },
+
     ],
     []
   );
@@ -1352,8 +1364,8 @@ export default function HomeScreen() {
                     });
                   }
                 }}>
-                <Image 
-                  source={{ uri: item.image }} 
+                <Image
+                  source={{ uri: item.image }}
                   style={styles.featureImage}
                   cachePolicy="memory-disk"
                   contentFit="cover"
@@ -1362,8 +1374,10 @@ export default function HomeScreen() {
                 />
                 <View style={styles.featureOverlay} />
                 <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>{item.title}</Text>
-                  <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
+                  <View style={styles.featureTextContainer}>
+                    <Text style={styles.featureTitle}>{item.title}</Text>
+                    <Text style={styles.featureSubtitle}>{item.subtitle}</Text>
+                  </View>
                   <Pressable
                     style={styles.primaryButton}
                     onPress={() => {
@@ -1551,14 +1565,14 @@ type CollectionSectionProps = {
 };
 
 // Memoized collection card component
-const CollectionCard = React.memo(({ 
-  item, 
-  isLoading, 
-  onLoadStart, 
-  onLoadEnd, 
-  onPress 
-}: { 
-  item: CollectionItem; 
+const CollectionCard = React.memo(({
+  item,
+  isLoading,
+  onLoadStart,
+  onLoadEnd,
+  onPress
+}: {
+  item: CollectionItem;
   isLoading: boolean;
   onLoadStart: () => void;
   onLoadEnd: () => void;
@@ -1614,7 +1628,7 @@ function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: Colle
   const displayItems = useMemo(() => {
     return limit ? items.slice(0, limit) : items;
   }, [items, limit]);
-  
+
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   const handleImageLoadStart = useCallback((itemId: string) => {
@@ -1654,8 +1668,8 @@ function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: Colle
         )}
       </View>
 
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         removeClippedSubviews={true}
       >
@@ -1769,7 +1783,14 @@ const styles = StyleSheet.create({
   featureContent: {
     flex: 1,
     padding: 24,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+  },
+  featureTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+    marginBottom: 16,
   },
   featureTitle: {
     color: '#fff',
@@ -1780,10 +1801,9 @@ const styles = StyleSheet.create({
     color: '#E4E5F1',
     fontSize: 16,
     lineHeight: 22,
-    marginTop: 6,
   },
   primaryButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     borderRadius: 22,
     paddingHorizontal: 28,
     paddingVertical: 12,
