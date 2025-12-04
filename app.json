@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Pika Lab",
+    "name": "AI Video Maker",
     "slug": "DemoPikaApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/appIcon.png",
+    "icon": "./assets/icons/icon.png",
     "scheme": "demopikaapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "negarsapp.pikaapp",
-      "icon":{"dark": "./assets/icons/appIcon.png",
-      "light":"./assets/icons/appIcon.png"},
+      "icon":{"dark": "./assets/icons/icon.png",
+      "light":"./assets/icons/icon.png"},
       "infoPlist": {
         "NSUserTrackingUsageDescription": "We use tracking to provide you with personalized content and improve your app experience.",
         "NSCameraUsageDescription": "Pika Lab uses your camera to capture photos that serve as input images for AI video generation. When you take a photo, the image is uploaded to our servers where it is processed and animated using AI technology to create a video. For example, if you take a photo of yourself, we will use that image to generate an animated video where you appear to move or react, which you can then save and share.",
@@ -45,7 +45,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icons/appIcon.png",
+          "image": "./assets/icons/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
