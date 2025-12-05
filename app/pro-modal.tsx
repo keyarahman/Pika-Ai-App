@@ -517,7 +517,7 @@ export default function ProModalScreen() {
         {/* Plans and Buttons - Bottom */}
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.proTitle}>Get Pika Lab Pro</Text>
+          <Text style={styles.proTitle}>Get Pik AI Pro</Text>
 
           {/* Benefits List - Above Plans */}
           <View style={styles.benefitsContainer}>

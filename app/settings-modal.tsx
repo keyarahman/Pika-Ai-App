@@ -75,7 +75,7 @@ export default function SettingsModal() {
     try {
       await Share.share({
         message:
-          'Create stunning AI videos with Pika Labs. Download now: https://pika.art/app',
+          'Create stunning AI videos with Pik AI.',
       });
     } catch (error) {
       // no-op
@@ -162,7 +162,7 @@ export default function SettingsModal() {
               </View>
               <View style={styles.rowContent}>
                 <Text style={styles.rowTitle}>Share App</Text>
-                <Text style={styles.rowSubtitle}>Invite friends to Pika Labs</Text>
+                <Text style={styles.rowSubtitle}>Invite friends to Pik AI</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#77759A" />
             </Pressable>
@@ -213,7 +213,7 @@ export default function SettingsModal() {
           {/* App Version */}
           <View style={styles.versionContainer}>
             <Text style={styles.versionText}>
-              Version {Constants.expoConfig?.version || '1.0.0'}
+              Version {Constants.expoConfig?.version || '1.0.1'}
             </Text>
           </View>
         </ScrollView>
