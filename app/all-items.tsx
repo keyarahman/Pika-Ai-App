@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { fetchWinterVibeTemplates, WinterTemplate } from '@/utils/winter-vibe';
 import {
   AI_DANCING_ITEMS,
   // AI_ROMANCE_ITEMS, // Commented out for App Store review - intimate content removed
@@ -33,13 +34,23 @@ const CARD_WIDTH =
 
 export default function AllItemsScreen() {
   const router = useRouter();
-  const { title, items: itemsParam } = useLocalSearchParams<{
+  const { title, items: itemsParam, collectionKey } = useLocalSearchParams<{
     title?: string;
     items?: string;
+    collectionKey?: string;
   }>();
   const headerTitle =
     typeof title === 'string' && title.trim().length > 0 ? title : 'All Items';
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [winterItems, setWinterItems] = useState<CollectionItem[]>([]);
+  const [winterPage, setWinterPage] = useState(1);
+  const [isWinterLoading, setIsWinterLoading] = useState(false);
+  const [isWinterRefreshing, setIsWinterRefreshing] = useState(false);
+  const [winterHasMore, setWinterHasMore] = useState(true);
+
+  const normalizedCollectionKey =
+    Array.isArray(collectionKey) ? collectionKey[0] : collectionKey;
+  const isWinterVibe = normalizedCollectionKey === 'winter-vibe';
 
   // Parse items from params or fallback to default collections
   const collectionData = useMemo(() => {
@@ -76,6 +87,61 @@ export default function AllItemsScreen() {
     return VIRAL_ITEMS;
   }, [title, itemsParam]);
 
+  const mapWinterTemplateToCollectionItem = useCallback((template: WinterTemplate): CollectionItem => {
+    const image =
+      template.web_thumbnail_gif_url ||
+      template.web_thumbnail_url ||
+      template.app_thumbnail_gif_url ||
+      template.app_thumbnail_url ||
+      '';
+
+    const videUrl =
+      template.web_thumbnail_video_url ||
+      template.app_thumbnail_video_url ||
+      '';
+
+    return {
+      id: String(template.template_id),
+      title: template.display_name || `Template ${template.template_id}`,
+      prompt: template.display_prompt || template.display_name || `Template ${template.template_id}`,
+      templateId: template.template_id,
+      image,
+      videUrl,
+    };
+  }, []);
+
+  const loadWinterPage = useCallback(
+    async (page: number, isRefresh: boolean = false) => {
+      if (isWinterLoading) return;
+      try {
+        setIsWinterLoading(true);
+        const pageSize = 20;
+        const { templates, hasMore } = await fetchWinterVibeTemplates(page, pageSize);
+        const mapped = templates.map(mapWinterTemplateToCollectionItem);
+        setWinterItems((prev) => (isRefresh || page === 1 ? mapped : [...prev, ...mapped]));
+        setWinterHasMore(hasMore);
+        setWinterPage(page);
+      } catch (error) {
+        console.error('Failed to load Winter Vibe templates', error);
+      } finally {
+        setIsWinterLoading(false);
+        if (isRefresh) {
+          setIsWinterRefreshing(false);
+        }
+      }
+    },
+    [isWinterLoading, mapWinterTemplateToCollectionItem]
+  );
+
+  useEffect(() => {
+    if (isWinterVibe) {
+      setWinterItems([]);
+      setWinterPage(1);
+      setWinterHasMore(true);
+      void loadWinterPage(1, true);
+    }
+  }, [isWinterVibe, loadWinterPage]);
+
   const handlePressItem = useCallback(
     (item: CollectionItem) => {
       router.push({
@@ -104,6 +170,8 @@ export default function AllItemsScreen() {
       return next;
     });
   }, []);
+
+  const dataToRender = isWinterVibe ? winterItems : collectionData;
 
   const renderItem = useCallback(({ item }: { item: CollectionItem }) => {
     const isLoading = loadingImages.has(item.id);
@@ -146,6 +214,17 @@ export default function AllItemsScreen() {
 
   const keyExtractor = useCallback((item: CollectionItem) => item.id, []);
 
+  const handleLoadMore = useCallback(() => {
+    if (!isWinterVibe || isWinterLoading || !winterHasMore) return;
+    void loadWinterPage(winterPage + 1);
+  }, [isWinterVibe, isWinterLoading, winterHasMore, winterPage, loadWinterPage]);
+
+  const handleRefresh = useCallback(() => {
+    if (!isWinterVibe) return;
+    setIsWinterRefreshing(true);
+    void loadWinterPage(1, true);
+  }, [isWinterVibe, loadWinterPage]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" translucent />
@@ -160,7 +239,7 @@ export default function AllItemsScreen() {
       <FlatList
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.columnWrapper}
-        data={collectionData}
+        data={dataToRender}
         keyExtractor={keyExtractor}
         numColumns={NUM_COLUMNS}
         renderItem={renderItem}
@@ -170,6 +249,24 @@ export default function AllItemsScreen() {
         maxToRenderPerBatch={6}
         windowSize={5}
         updateCellsBatchingPeriod={50}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.6}
+        refreshing={isWinterVibe ? isWinterRefreshing : false}
+        onRefresh={isWinterVibe ? handleRefresh : undefined}
+        ListEmptyComponent={
+          isWinterVibe && isWinterLoading ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#9BA0BC" />
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          isWinterVibe && isWinterLoading && winterItems.length > 0 ? (
+            <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#9BA0BC" />
+            </View>
+          ) : null
+        }
       />
     </SafeAreaView>
   );

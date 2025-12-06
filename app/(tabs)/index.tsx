@@ -1,3 +1,4 @@
+import { fetchWinterVibeTemplates, WinterTemplate } from '@/utils/winter-vibe';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1293,6 +1294,50 @@ export default function HomeScreen() {
     return allItems[randomIndex];
   });
 
+  const [winterItems, setWinterItems] = useState<CollectionItem[]>([]);
+  const [isWinterLoading, setIsWinterLoading] = useState(false);
+
+  const mapWinterTemplateToCollectionItem = useCallback((template: WinterTemplate): CollectionItem => {
+    const image =
+      template.web_thumbnail_gif_url ||
+      template.web_thumbnail_url ||
+      template.app_thumbnail_gif_url ||
+      template.app_thumbnail_url ||
+      '';
+
+    const videUrl =
+      template.web_thumbnail_video_url ||
+      template.app_thumbnail_video_url ||
+      '';
+
+    return {
+      id: String(template.template_id),
+      title: template.display_name || `Template ${template.template_id}`,
+      prompt: template.display_prompt || template.display_name || `Template ${template.template_id}`,
+      templateId: template.template_id,
+      image,
+      videUrl,
+    };
+  }, []);
+
+  const loadWinterItems = useCallback(async () => {
+    if (isWinterLoading) return;
+    try {
+      setIsWinterLoading(true);
+      const { templates } = await fetchWinterVibeTemplates(1, 20);
+      const mapped = templates.map(mapWinterTemplateToCollectionItem);
+      setWinterItems(mapped);
+    } catch (error) {
+      console.error('Failed to load Winter Vibe templates', error);
+    } finally {
+      setIsWinterLoading(false);
+    }
+  }, [isWinterLoading, mapWinterTemplateToCollectionItem]);
+
+  useEffect(() => {
+    void loadWinterItems();
+  }, []);
+
   const handlePressCollectionItem = useCallback(
     (item: CollectionItem) => {
       router.push({
@@ -1473,6 +1518,22 @@ export default function HomeScreen() {
               params: {
                 title: sectionTitle,
                 items: JSON.stringify(sectionItems),
+              },
+            })
+          }
+          onPressItem={handlePressCollectionItem}
+        />
+
+        <MemoizedCollectionSection
+          title="Winter Vibe"
+          items={winterItems}
+          limit={5}
+          onSeeAll={(sectionTitle) =>
+            router.push({
+              pathname: '/all-items',
+              params: {
+                title: sectionTitle,
+                collectionKey: 'winter-vibe',
               },
             })
           }
