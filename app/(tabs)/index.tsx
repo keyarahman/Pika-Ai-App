@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type FeaturedItem = {
   id: string;
@@ -28,7 +29,9 @@ export type CollectionItem = {
 };
 
 const windowWidth = Dimensions.get('window').width;
-const CARD_WIDTH = windowWidth * 0.82;
+const windowHeight = Dimensions.get('window').height;
+const HERO_HEIGHT = windowHeight * 0.40;
+const CARD_WIDTH = windowWidth;
 const CARD_SPACING = 16;
 
 export const PRO_PLANS = [
@@ -1221,6 +1224,7 @@ export const ALL_COLLECTIONS_ITEMS = getAllCollectionsItems();
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const featuredItems = useMemo<FeaturedItem[]>(
     () => [
@@ -1301,10 +1305,31 @@ export default function HomeScreen() {
   );
 
   const [activeFeature, setActiveFeature] = useState(0);
+  const featureScrollRef = useRef<ScrollView | null>(null);
+
+  // Auto-advance featured carousel
+  useEffect(() => {
+    if (!featuredItems.length || !featureScrollRef.current) return;
+
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => {
+        const nextIndex = (prev + 1) % featuredItems.length;
+        featureScrollRef.current?.scrollTo({
+          x: nextIndex * CARD_WIDTH,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [featuredItems.length]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.stickyHeader}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+
+      <View style={[styles.stickyHeader, { paddingTop: insets.top + 8 }]}>
         <Pressable
           style={styles.iconButton}
           onPress={() => router.push('/search')}>
@@ -1334,6 +1359,7 @@ export default function HomeScreen() {
 
         <View style={styles.featureCarousel}>
           <ScrollView
+            ref={featureScrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -1343,7 +1369,6 @@ export default function HomeScreen() {
               const index = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
               setActiveFeature(index);
             }}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
             snapToAlignment="start">
             {featuredItems.map((item) => (
               <Pressable
@@ -1373,6 +1398,11 @@ export default function HomeScreen() {
                   placeholderContentFit="cover"
                 />
                 <View style={styles.featureOverlay} />
+                <LinearGradient
+                  colors={['rgba(3,3,8,0)', 'rgba(0, 0, 0, 0.95)']}
+                  locations={[0.2, 1]}
+                  style={styles.featureGradient}
+                />
                 <View style={styles.featureContent}>
                   <View style={styles.featureTextContainer}>
                     <Text style={styles.featureTitle}>{item.title}</Text>
@@ -1408,7 +1438,7 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </ScrollView>
-
+ 
           <View style={styles.pagination}>
             {featuredItems.map((item, index) => (
               <View
@@ -1420,6 +1450,9 @@ export default function HomeScreen() {
               />
             ))}
           </View>
+          
+              
+ 
         </View>
 
         <MemoizedCollectionSection
@@ -1607,7 +1640,14 @@ const CollectionCard = React.memo(({
             <Text style={styles.badgeText}>{item.badge}</Text>
           </View>
         )}
-        <Text style={styles.collectionTitle}>{item.title}</Text>
+        <View style={styles.collectionTitleWrapper}>
+          <Text
+            style={styles.collectionTitle}
+            numberOfLines={1}
+            ellipsizeMode="tail">
+            {item.title}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -1663,7 +1703,7 @@ function CollectionSection({ title, items, limit, onSeeAll, onPressItem }: Colle
         <Text style={styles.sectionTitle}>{title}</Text>
         {onSeeAll && (
           <Pressable hitSlop={8} onPress={handleSeeAllPress}>
-            <Text style={styles.sectionLink}>See All</Text>
+            <Ionicons name="chevron-forward" size={18} color="#A8A9C3" />
           </Pressable>
         )}
       </View>
@@ -1731,17 +1771,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stickyHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: '#0F0D16',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    justifyContent: 'space-between',
-    zIndex: 10,
-  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1763,13 +1792,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 0.4,
   },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'space-between',
+    zIndex: 20,
+  },
   featureCarousel: {
-    marginTop: 20,
+    marginTop: 0,
+    height: HERO_HEIGHT + 32,
   },
   featureCard: {
-    height: 220,
-    borderRadius: 28,
-    marginRight: 16,
+    height: HERO_HEIGHT,
+  
+    marginRight: 0,
     overflow: 'hidden',
     backgroundColor: '#1E1B2D',
   },
@@ -1780,33 +1823,43 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(13, 10, 20, 0.45)',
   },
+  featureGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: HERO_HEIGHT * 0.7,
+  },
   featureContent: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 28,
     justifyContent: 'flex-end',
+    alignItems: 'center',
+    alignSelf:"center"
   },
   featureTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexWrap: 'wrap',
-    marginBottom: 16,
+    width: '100%',
+    gap: 4,
+    marginBottom: 12,
   },
   featureTitle: {
-    color: '#fff',
-    fontSize: 28,
+    color: '#F5F3FF',
+    fontSize: 22,
     fontWeight: '800',
+    textAlign: 'center',
   },
   featureSubtitle: {
-    color: '#E4E5F1',
-    fontSize: 16,
-    lineHeight: 22,
+    color: '#C7C9E8',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   primaryButton: {
     alignSelf: 'center',
-    borderRadius: 22,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
+    borderRadius: 40,
+    paddingHorizontal: 35,
+    paddingVertical: 10,
     overflow: 'hidden',
   },
   primaryButtonText: {
@@ -1815,7 +1868,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   pagination: {
-    marginTop: 12,
+    position: 'absolute',
+    bottom: 44,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 6,
@@ -1824,14 +1880,15 @@ const styles = StyleSheet.create({
     height: 6,
     width: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#6B6D85',
   },
   paginationDotActive: {
     width: 18,
-    backgroundColor: '#6F39FF',
+    backgroundColor: '#C7C9E8',
   },
   section: {
-    marginTop: 28,
+    // marginTop: 8,
+    marginBottom: 8,
   },
   sectionHeader: {
     paddingHorizontal: 20,
@@ -1839,16 +1896,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 14,
+   
   },
   sectionTitle: {
     color: '#fff',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
   },
   sectionLink: {
     color: '#A8A9C3',
     fontSize: 14,
     fontWeight: '600',
+  },
+  sectionLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   sectionRow: {
     flexDirection: 'row',
@@ -1872,7 +1935,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: 14,
+    paddingBottom: 10,
   },
   badge: {
     alignSelf: 'flex-start',
@@ -1892,11 +1955,19 @@ const styles = StyleSheet.create({
   badgeHot: {
     backgroundColor: '#FF4F6D',
   },
+  collectionTitleWrapper: {
+    marginTop: 'auto',
+    alignSelf: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(10, 7, 16, 0.72)',
+    maxWidth: '100%',
+  },
   collectionTitle: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
-    marginTop: 'auto',
   },
   imageLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
