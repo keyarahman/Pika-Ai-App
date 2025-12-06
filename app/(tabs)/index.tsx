@@ -1286,6 +1286,12 @@ export default function HomeScreen() {
   const fashionItems = useMemo(() => FASHION_ITEMS, []);
   const festivalItems = useMemo(() => FESTIVAL_ITEMS, []);
   const aiFunnyItems = useMemo(() => AI_FUNNY_ITEMS, []);
+  const [bannerItem] = useState<CollectionItem | null>(() => {
+    const allItems = ALL_COLLECTIONS_ITEMS;
+    if (!allItems.length) return null;
+    const randomIndex = Math.floor(Math.random() * allItems.length);
+    return allItems[randomIndex];
+  });
 
   const handlePressCollectionItem = useCallback(
     (item: CollectionItem) => {
@@ -1455,6 +1461,8 @@ export default function HomeScreen() {
  
         </View>
 
+     
+
         <MemoizedCollectionSection
           title="Popular"
           items={viralItems}
@@ -1534,6 +1542,12 @@ export default function HomeScreen() {
           }
           onPressItem={handlePressCollectionItem}
         />
+           {bannerItem && (
+          <CollectionBanner
+            item={bannerItem}
+            onPressItem={handlePressCollectionItem}
+          />
+        )}
 
         <MemoizedCollectionSection
           title="Fashion"
@@ -1586,6 +1600,80 @@ export default function HomeScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+type CollectionBannerProps = {
+  item: CollectionItem;
+  onPressItem?: (item: CollectionItem) => void;
+};
+
+function CollectionBanner({ item, onPressItem }: CollectionBannerProps) {
+  const handlePress = useCallback(() => {
+    onPressItem?.(item);
+  }, [item, onPressItem]);
+
+  return (
+    <View style={styles.bannerContainer}>
+      <View style={styles.bannerGlowWrapper}>
+        <LinearGradient
+          colors={['rgba(234, 97, 152, 0.0)', 'rgba(234, 97, 152, 0.35)', 'rgba(113, 53, 255, 0.45)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.bannerGlow}
+          pointerEvents="none"
+        />
+      </View>
+      <Pressable style={styles.bannerCard} onPress={handlePress}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.bannerImage}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          transition={200}
+          placeholderContentFit="cover"
+        />
+        <View style={styles.bannerOverlay} />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.95)']}
+          locations={[0.25, 1]}
+          style={styles.bannerGradient}
+        />
+        <View pointerEvents="none">
+          <Ionicons name="sparkles" size={18} color="rgba(255, 255, 255, 0.55)" style={styles.bannerSparkleTL} />
+          <Ionicons name="sparkles" size={18} color="rgba(255, 255, 255, 0.45)" style={styles.bannerSparkleBR} />
+        </View>
+        <View style={styles.bannerContent}>
+          <View style={styles.bannerTextBlock}>
+            <Text style={styles.bannerTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={styles.bannerSubtitle} numberOfLines={2}>
+              {item.prompt ?? 'Let’s do some magic with your photos.'}
+            </Text>
+          </View>
+          <Pressable style={styles.bannerButton} onPress={handlePress}>
+            <LinearGradient
+              colors={['#EA6198', '#7135FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+              pointerEvents="none"
+            />
+            <View style={styles.bannerButtonInner}>
+              <View style={styles.bannerButtonIcon}>
+                <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+              </View>
+              <Text style={styles.bannerButtonText}>Try it Now</Text>
+            </View>
+          </Pressable>
+        </View>
+        <View pointerEvents="none">
+          <Ionicons name="sparkles" size={18} color="rgba(255, 255, 255, 0.55)" style={styles.bannerSparkleTL} />
+          <Ionicons name="sparkles" size={18} color="rgba(255, 255, 255, 0.45)" style={styles.bannerSparkleBR} />
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
@@ -1885,6 +1973,103 @@ const styles = StyleSheet.create({
   paginationDotActive: {
     width: 18,
     backgroundColor: '#C7C9E8',
+  },
+  bannerContainer: {
+    paddingHorizontal: 10,
+    marginVertical: 20,
+  },
+  bannerGlowWrapper: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    top: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  bannerGlow: {
+    flex: 1,
+    borderRadius: 32,
+    opacity: 0.9,
+    shadowColor: '#7135FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 22,
+  },
+  bannerCard: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: '#1E1B2D',
+    height: HERO_HEIGHT * 0.72,
+  },
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 7, 16, 0.55)',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '72%',
+  },
+  bannerSparkleTL: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+  },
+  bannerSparkleBR: {
+    position: 'absolute',
+    bottom: 18,
+    right: 26,
+  },
+  bannerContent: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingBottom: 24,
+    paddingTop: 18,
+    justifyContent: 'space-between',
+  },
+  bannerTextBlock: {
+    maxWidth: '80%',
+    gap: 8,
+  },
+  bannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  bannerSubtitle: {
+    color: '#E1E2F4',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  bannerButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    overflow: 'hidden',
+  },
+  bannerButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bannerButtonIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   section: {
     // marginTop: 8,
