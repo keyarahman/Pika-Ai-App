@@ -75,7 +75,7 @@ export default function SettingsModal() {
     try {
       await Share.share({
         message:
-          'Create stunning AI videos with Pik AI.',
+          'Create stunning AI videos with VidVerse.',
       });
     } catch (error) {
       // no-op
@@ -162,7 +162,7 @@ export default function SettingsModal() {
               </View>
               <View style={styles.rowContent}>
                 <Text style={styles.rowTitle}>Share App</Text>
-                <Text style={styles.rowSubtitle}>Invite friends to Pik AI</Text>
+                <Text style={styles.rowSubtitle}>Invite friends to VidVerse</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#77759A" />
             </Pressable>
