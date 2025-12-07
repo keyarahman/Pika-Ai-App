@@ -140,7 +140,7 @@ export default function AllItemsScreen() {
       setWinterHasMore(true);
       void loadWinterPage(1, true);
     }
-  }, [isWinterVibe, loadWinterPage]);
+  }, [isWinterVibe,]);
 
   const handlePressItem = useCallback(
     (item: CollectionItem) => {
