@@ -37,7 +37,7 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
     }
     
     const offerings = await Purchases.getOfferings();
-    // console.log('Fetched offerings:', offerings);
+    console.log('Fetched offerings:', offerings);
     return offerings;
   } catch (error) {
     console.error('Error fetching offerings:', error);

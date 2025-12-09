@@ -153,17 +153,27 @@ export default function ProModalScreen() {
 
           // Set default selected plan to yearly if available, otherwise weekly
           const yearlyPackage = availablePackages.find(pkg =>
+            // Prefer RevenueCat's packageType first
+            pkg.packageType === 'ANNUAL' ||
+            // Fallback to identifier / product identifier naming
             pkg.identifier === '$rc_annual' ||
-            pkg.identifier === 'negarsapp.pikaapp.yearly' ||
-            pkg.identifier.includes('yearly') ||
-            pkg.identifier.includes('annual')
+            pkg.identifier === 'vidverse.pro_yearly' ||
+            pkg.identifier.toLowerCase().includes('yearly') ||
+            pkg.identifier.toLowerCase().includes('annual') ||
+            pkg.product.identifier.toLowerCase().includes('yearly') ||
+            pkg.product.identifier.toLowerCase().includes('annual')
           );
           const weeklyPackage = availablePackages.find(pkg =>
+            // Prefer RevenueCat's packageType first
+            pkg.packageType === 'WEEKLY' ||
+            // Fallback to identifier / product identifier naming
             pkg.identifier === '$rc_weekly' ||
-            pkg.identifier === 'negarsapp.pikaapp.pro.weekly' ||
-            pkg.product.identifier === 'negarsapp.pikaapp.pro.weekly' ||
-            pkg.identifier.includes('weekly') ||
-            pkg.identifier.includes('week')
+            pkg.identifier === 'vidverse.pro_weekly' ||
+            pkg.product.identifier === 'vidverse.pro_weekly' ||
+            pkg.identifier.toLowerCase().includes('weekly') ||
+            pkg.identifier.toLowerCase().includes('week') ||
+            pkg.product.identifier.toLowerCase().includes('weekly') ||
+            pkg.product.identifier.toLowerCase().includes('week')
           );
 
           // Debug: Log which weekly package was found
@@ -355,31 +365,56 @@ export default function ProModalScreen() {
     const price = product.priceString; // This comes directly from App Store, should be correct
     const identifier = packageItem.identifier.toLowerCase();
     const productId = product.identifier.toLowerCase();
+    const packageType = packageItem.packageType; // RevenueCat's canonical type
+
+    const isAnnual =
+      packageType === 'ANNUAL' ||
+      identifier === '$rc_annual' ||
+      identifier === 'vidverse.pro_yearly' ||
+      identifier.includes('yearly') ||
+      identifier.includes('annual') ||
+      productId.includes('yearly') ||
+      productId.includes('annual');
+
+    const isWeekly =
+      packageType === 'WEEKLY' ||
+      identifier === '$rc_weekly' ||
+      identifier === 'vidverse.pro_weekly' ||
+      identifier.includes('weekly') ||
+      identifier.includes('week') ||
+      productId.includes('weekly') ||
+      productId.includes('week');
+
+    const isMonthly =
+      packageType === 'MONTHLY' ||
+      identifier.includes('monthly') ||
+      identifier.includes('month') ||
+      productId.includes('monthly') ||
+      productId.includes('month');
 
     // For yearly plans, show the ACTUAL YEARLY PRICE (billed amount)
-    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' ||
-      identifier.includes('yearly') || identifier.includes('annual') ||
-      productId.includes('yearly') || productId.includes('annual')) {
-      // Return the actual billed amount (yearly price)
+    if (isAnnual) {
       // priceString should already have currency symbol, just add /yr if not present
       if (!price.toLowerCase().includes('year') && !price.toLowerCase().includes('yr')) {
         return `${price}/yr`;
       }
       return price;
-    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' ||
-      identifier.includes('weekly') || identifier.includes('week') ||
-      productId.includes('weekly') || productId.includes('week')) {
+    }
+
+    if (isWeekly) {
       // For weekly plans, use the priceString directly (it should already be formatted correctly)
       // Don't add /wk if it's already in the price string
       if (!price.toLowerCase().includes('week') && !price.toLowerCase().includes('wk')) {
         return `${price}/wk`;
       }
       return price;
-    } else if (identifier.includes('monthly') || identifier.includes('month') ||
-      productId.includes('monthly') || productId.includes('month')) {
+    }
+
+    if (isMonthly) {
       if (!price.toLowerCase().includes('month') && !price.toLowerCase().includes('mo')) {
         return `${price}/mo`;
       }
+      return price;
     }
 
     return price;
@@ -388,9 +423,16 @@ export default function ProModalScreen() {
   // Get weekly calculated price as helper text (subordinate, smaller)
   const getWeeklyCalculatedPrice = useCallback((packageItem: PurchasesPackage): string | null => {
     const identifier = packageItem.identifier.toLowerCase();
+    const packageType = packageItem.packageType;
 
     // Only show weekly calculated price for yearly plans
-    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    if (
+      packageType === 'ANNUAL' ||
+      identifier === '$rc_annual' ||
+      identifier === 'vidverse.pro_yearly' ||
+      identifier.includes('yearly') ||
+      identifier.includes('annual')
+    ) {
       try {
         const product = packageItem.product;
         const numericPrice = product.price;
@@ -429,25 +471,57 @@ export default function ProModalScreen() {
   // Get plan label from package identifier
   const getPlanLabel = useCallback((packageItem: PurchasesPackage): string => {
     const identifier = packageItem.identifier.toLowerCase();
+    const packageType = packageItem.packageType;
 
-    // Handle specific identifiers
-    if (identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual')) {
+    // Prefer RevenueCat's packageType for correctness
+    if (packageType === 'ANNUAL') {
       return 'Yearly';
-    } else if (identifier === '$rc_weekly' || identifier === 'negarsapp.pikaapp.pro.weekly' || identifier.includes('weekly') || identifier.includes('week')) {
+    }
+    if (packageType === 'WEEKLY') {
       return 'Weekly';
-    } else if (identifier.includes('monthly') || identifier.includes('month')) {
+    }
+    if (packageType === 'MONTHLY') {
       return 'Monthly';
     }
 
-    // Default: use package type
-    return packageItem.packageType.charAt(0).toUpperCase() + packageItem.packageType.slice(1);
+    // Fallback to identifier heuristics
+    if (
+      identifier === '$rc_annual' ||
+      identifier === 'vidverse.pro_yearly' ||
+      identifier.includes('yearly') ||
+      identifier.includes('annual')
+    ) {
+      return 'Yearly';
+    }
+    if (
+      identifier === '$rc_weekly' ||
+      identifier === 'vidverse.pro_weekly' ||
+      identifier.includes('weekly') ||
+      identifier.includes('week')
+    ) {
+      return 'Weekly';
+    }
+    if (identifier.includes('monthly') || identifier.includes('month')) {
+      return 'Monthly';
+    }
+
+    // Default: use package type as-is
+    return packageType.charAt(0).toUpperCase() + packageType.slice(1);
   }, []);
 
   // Check if plan has badge
   const hasBadge = useCallback((packageItem: PurchasesPackage): boolean => {
     const identifier = packageItem.identifier.toLowerCase();
+    const packageType = packageItem.packageType;
+
     // Yearly plan gets "BEST VALUE" badge
-    return identifier === '$rc_annual' || identifier === 'negarsapp.pikaapp.yearly' || identifier.includes('yearly') || identifier.includes('annual');
+    return (
+      packageType === 'ANNUAL' ||
+      identifier === '$rc_annual' ||
+      identifier === 'vidverse.pro_yearly' ||
+      identifier.includes('yearly') ||
+      identifier.includes('annual')
+    );
   }, []);
 
   // Memoize formatted prices and other computed values for each package
