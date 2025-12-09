@@ -1,6 +1,6 @@
 import Purchases, { CustomerInfo, PurchasesOffering, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 
-const REVENUECAT_API_KEY = 'appl_NVlOoCBtfBAuPOdtSyIjfLtkuTU';
+const REVENUECAT_API_KEY = 'appl_WQHSodgscQgyhdcDdEMdCvmXQpZ';
 
 let isInitialized = false;
 
