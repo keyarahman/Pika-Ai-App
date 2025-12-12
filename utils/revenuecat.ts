@@ -1,6 +1,6 @@
 import Purchases, { CustomerInfo, PurchasesOffering, PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 
-const REVENUECAT_API_KEY = 'appl_WQHSodgscQgyhdcDdEMdCvmXQpZ';
+const REVENUECAT_API_KEY = 'appl_WEZWnRWUwIBeWYrlJDizjcGiNlb';
 
 let isInitialized = false;
 
@@ -13,7 +13,7 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
   }
 
   try {
-    await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    await Purchases.configure({ apiKey: REVENUECAT_API_KEY, });
     
     if (userId) {
       await Purchases.logIn(userId);
